@@ -245,7 +245,7 @@ void refresh_screen() {
       if (min != min_prev || modulino_temp != temp_prev) {
         min_prev = min;
         temp_prev = modulino_temp;
-        draw_small_clock(hour, min, (int8_t)modulino_temp);
+        draw_small_clock(hour, min, (int8_t)round(modulino_temp));
       }
     }
 
@@ -262,7 +262,7 @@ void refresh_screen() {
   }
 
   if (clock_style == CLOCKSTYLE_PLASMA) {
-    draw_plasma_clock(rtc.get_hour(), rtc.get_minute(), modulino_temp);
+    draw_plasma_clock(rtc.get_hour(), rtc.get_minute(), (int8_t)round(modulino_temp));
   }
 
   // Scroll the text if needed - go to the first style when finished
@@ -272,7 +272,7 @@ void refresh_screen() {
       clock_style = CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP;
       uint8_t hour = rtc.get_hour();
       uint8_t min = rtc.get_minute();
-      draw_small_clock(hour, min, modulino_temp);
+      draw_small_clock(hour, min, (int8_t)round(modulino_temp));
     } else {
       delay(5);
     }
@@ -485,7 +485,7 @@ void handle_button_actions() {
     draw_small_clock_with_seconds(hour, min, second);
   }
   if (clock_style == CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP) {
-    draw_small_clock(hour, min, (int8_t)modulino_temp);
+    draw_small_clock(hour, min, (int8_t)round(modulino_temp));
   }
   if (clock_style == CLOCKSTYLE_BIG) {
     draw_clock(hour, min);
