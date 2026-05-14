@@ -467,8 +467,11 @@ void handle_button_actions() {
     return;
   }
   button_pressed = false;
-
   Serial.println("Button pressed");
+
+  // Cancel any ongoing text scrolling
+  text_scroll_in_progress = false;
+
   clock_style = (clock_styles_t)((int)clock_style + 1);
   if (clock_style >= CLOCKSTYLE_MAX) {
     clock_style = (clock_styles_t)0;
