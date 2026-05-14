@@ -429,12 +429,16 @@ void draw_small_clock_with_seconds(uint8_t hour, uint8_t minute, uint8_t seconds
 }
 
 void show_detailed_status() {
-  char temp_postfix = 'C';
-  char dest[200];
+  MillisRTC& rtc = MillisRTC::getInstance();
+  char dest[300];
   size_t size = sizeof(dest);
   snprintf_P(dest,
              size,
-             PSTR("auraZigbee  Uptime: %s  Temperature: %.1f°C  Humidity: %.0f%%  Light level: %.0f lx  Zigbee PAN ID: 0x%02x  Zigbee channel: %u"),
+             PSTR("auraZigbee  %u. %02u. %02u. %s  Uptime: %s  Temperature: %.1f°C  Humidity: %.0f%%  Light level: %.0f lx  Zigbee PAN ID: 0x%02x  Zigbee channel: %u"),
+             rtc.get_year(),
+             rtc.get_month(),
+             rtc.get_day(),
+             rtc.get_dayname_str(),
              Uptime::getInstance().get_uptime_string().c_str(),
              modulino_temp,
              modulino_humidity,
