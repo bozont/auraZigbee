@@ -96,20 +96,19 @@ void setup() {
   zigbee_light_sensor.set_max_value_lux(100000.0f);
   zigbee_light_sensor.set_light_sensor_type(ZigbeeLightSensor::LIGHT_SENSOR_TYPE_CMOS);
 
+  // Perform initial temperature and humidity measurements
+  modulino_temp = floor(modulino_thermo.getTemperature() * 10) / 10.0 + modulino_temp_calibration;
+  modulino_humidity = floor(modulino_thermo.getHumidity());
+  zigbee_temp_sensor.set_measured_value_celsius(modulino_temp);
+  zigbee_humidity_sensor.set_measured_value_percent(modulino_humidity);
+
+  // Wait for the Zigbee network to be joined
   Serial.println("Waiting for Zigbee network...");
   while (!Zigbee.isJoinedToNetwork()) {
     delay(200);
     WatchdogTimer.feed();
   }
-  Serial.println("Joined Zigbee network!");
-  Serial.print("Channel: ");
-  Serial.println(Zigbee.getChannel());
-  Serial.print("PAN ID: 0x");
-  Serial.println(Zigbee.getPanId(), HEX);
-
-  // Perform initial temperature and humidity measurements
-  modulino_temp = floor(modulino_thermo.getTemperature() * 10) / 10.0 + modulino_temp_calibration;
-  modulino_humidity = floor(modulino_thermo.getHumidity());
+  Serial.printf("Joined Zigbee network; PAN_ID='0x%02x' channel='%u'\n", Zigbee.getPanId(), Zigbee.getChannel());
 
   WatchdogTimer.feed();
 }
