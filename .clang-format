@@ -1,0 +1,12 @@
+BasedOnStyle: LLVM
+IndentWidth: 2
+ColumnLimit: 150
+BreakBeforeBraces: Attach
+PointerAlignment: Left
+AllowShortFunctionsOnASingleLine: Empty
+AllowAllConstructorInitializersOnNextLine: false
+ConstructorInitializerIndentWidth: 4
+BreakConstructorInitializers: BeforeComma
+AllowShortIfStatementsOnASingleLine: true
+BinPackArguments: false
+AllowAllArgumentsOnNextLine: false

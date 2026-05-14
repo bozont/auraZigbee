@@ -1,0 +1,9 @@
+[
+  {
+      "configId": "SiliconLabs:silabs:nano_matter:programmer=openocd",
+      "servertype": "openocd",
+      "device": "MGM240SD22VNA",
+      "interface": "swd",
+      "serverpath": "openocd"
+  }
+]
