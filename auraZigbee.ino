@@ -15,7 +15,7 @@
 #include <ZigbeeLightbulb.h>
 #include <time.h>
 
-#include "src/soft_rtc.h"
+#include "src/millis_rtc.h"
 
 void max7219_set_pixel(uint8_t x, uint8_t y, bool value);
 void draw_small_clock(uint8_t hour, uint8_t minute, int8_t temperature, bool render_to_screen=true);
@@ -115,7 +115,7 @@ void setup() {
 void loop() {
   WatchdogTimer.feed();
   refresh_screen();
-  rtc_update();
+  MillisRTC::getInstance().update();
   handle_button_actions();
 
   uint32_t millis_curr = millis();
@@ -218,12 +218,14 @@ void refresh_screen() {
     return;
   }
 
+  MillisRTC& rtc = MillisRTC::getInstance();
+
   static uint8_t seconds_prev = 61;
-  uint8_t second = rtc_get_second();
+  uint8_t second = rtc.get_second();
   if (second != seconds_prev) {
     seconds_prev = second;
-    uint8_t hour = rtc_get_hour();
-    uint8_t min = rtc_get_minute();
+    uint8_t hour = rtc.get_hour();
+    uint8_t min = rtc.get_minute();
     // Serial.printf("%lu / %lu (max: %lu)\n", getUsedHeapSize(), getTotalHeapSize(), getHeapHighWatermark());
 
     if (clock_style == CLOCKSTYLE_SMALL_WITH_SECONDS) {
@@ -255,15 +257,15 @@ void refresh_screen() {
   }
 
   if (clock_style == CLOCKSTYLE_PLASMA) {
-    draw_plasma_clock(rtc_get_hour(), rtc_get_minute(), modulino_temp);
+    draw_plasma_clock(rtc.get_hour(), rtc.get_minute(), modulino_temp);
   }
 
   // Scroll the text if needed - go to the first style when finished
   if (clock_style == CLOCKSTYLE_DETAILED_STATUS) {
     if (!scroll_text()) {
       clock_style = CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP;
-      uint8_t hour = rtc_get_hour();
-      uint8_t min = rtc_get_minute();
+      uint8_t hour = rtc.get_hour();
+      uint8_t min = rtc.get_minute();
       draw_small_clock(hour, min, modulino_temp);
     } else {
       delay(5);
@@ -464,9 +466,10 @@ void handle_button_actions() {
   if (clock_style >= CLOCKSTYLE_MAX) {
     clock_style = (clock_styles_t)0;
   }
-  uint8_t hour = rtc_get_hour();
-  uint8_t min = rtc_get_minute();
-  uint8_t second = rtc_get_second();
+  MillisRTC& rtc = MillisRTC::getInstance();
+  uint8_t hour = rtc.get_hour();
+  uint8_t min = rtc.get_minute();
+  uint8_t second = rtc.get_second();
   if (clock_style == CLOCKSTYLE_SMALL_WITH_SECONDS) {
     draw_small_clock_with_seconds(hour, min, second);
   }
@@ -597,13 +600,13 @@ bool syncNTP() {
   delay(1000);
 
   if (zigbee_time_updated) {
-
+    MillisRTC& rtc = MillisRTC::getInstance();
     zigbee_time_updated = false;
     uint32_t current_ntp_time = zigbee_time.getLocalUnixTime();
-    rtc_set_from_unix(current_ntp_time);
+    rtc.set_from_unix(current_ntp_time);
     Serial.printf("Current NTP time: %lu\n", current_ntp_time);
 
-    time_t time = rtc_get_unix();
+    time_t time = rtc.get_unix();
     struct tm ts;
     // ts = *localtime(&time);
     gmtime_r(&time, &ts);
