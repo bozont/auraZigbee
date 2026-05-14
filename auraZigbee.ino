@@ -8,17 +8,17 @@
 #include <vector>
 
 #include <Zigbee.h>
-#include <ZigbeeTimeClient.h>
-#include <ZigbeeTemperatureSensor.h>
 #include <ZigbeeHumiditySensor.h>
 #include <ZigbeeLightSensor.h>
 #include <ZigbeeLightbulb.h>
+#include <ZigbeeTemperatureSensor.h>
+#include <ZigbeeTimeClient.h>
 #include <time.h>
 
 #include "src/millis_rtc.h"
 
 void max7219_set_pixel(uint8_t x, uint8_t y, bool value);
-void draw_small_clock(uint8_t hour, uint8_t minute, int8_t temperature, bool render_to_screen=true);
+void draw_small_clock(uint8_t hour, uint8_t minute, int8_t temperature, bool render_to_screen = true);
 #include "src/ledmatrix_font.h"
 #include "src/ledmatrix_gfx.h"
 
@@ -46,8 +46,7 @@ volatile bool zigbee_time_updated = false;
 volatile bool button_pressed = false;
 volatile bool text_scroll_in_progress = false;
 
-void onZigbeeTimeUpdated()
-{
+void onZigbeeTimeUpdated() {
   zigbee_time_updated = true;
 }
 
@@ -110,7 +109,7 @@ void setup() {
 
   // Perform initial temperature and humidity measurements
   modulino_temp = floor(modulino_thermo.getTemperature() * 10) / 10.0 + modulino_temp_calibration;
-  modulino_humidity= floor(modulino_thermo.getHumidity());
+  modulino_humidity = floor(modulino_thermo.getHumidity());
 
   WatchdogTimer.feed();
 }
@@ -172,13 +171,13 @@ void modulino_thermo_measure() {
     // Drop all decimals on humidity
     float modulino_humidity_new = floor(modulino_thermo.getHumidity());
 
-    if(modulino_temp_new != modulino_temp) {
+    if (modulino_temp_new != modulino_temp) {
       modulino_temp = modulino_temp_new;
       zigbee_temp_sensor.set_measured_value_celsius(modulino_temp);
       Serial.printf("Temperature: %.1f C\n", modulino_temp);
     }
 
-    if(modulino_humidity_new != modulino_humidity) {
+    if (modulino_humidity_new != modulino_humidity) {
       modulino_humidity = modulino_humidity_new;
       zigbee_humidity_sensor.set_measured_value_percent(modulino_humidity);
       Serial.printf("Humidity: %.1f%%\n", modulino_humidity);
@@ -221,7 +220,7 @@ typedef enum {
 static clock_styles_t clock_style = CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP;
 
 void refresh_screen() {
-  if(!lc.getDisplayOn()) {
+  if (!lc.getDisplayOn()) {
     return;
   }
 
@@ -238,7 +237,6 @@ void refresh_screen() {
       draw_small_clock_with_seconds(hour, min, second);
     }
 
-    
     if (clock_style == CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP) {
       static uint8_t min_prev = 61;
       static float temp_prev = -273.0f;
@@ -299,7 +297,7 @@ void draw_plasma_clock(uint8_t hour, uint8_t minute, int8_t temperature) {
 
   static int framesSinceChange = 0;
 
-  const float speed = 0.07f;       // plasma motion speed
+  const float speed = 0.07f;      // plasma motion speed
   const int changeInterval = 120; // frames before choosing a new target direction
   const float smoothing = 0.02f;  // how fast dirX/dirY interpolate
 
@@ -323,7 +321,7 @@ void draw_plasma_clock(uint8_t hour, uint8_t minute, int8_t temperature) {
       float value = sin(x * 0.15f * dirX + t) + sin(y * 0.3f * dirY + t * 1.3f) + sin((x + y) * 0.08f + t * 0.7f);
       bool pixel = (value > 0.3f); // lower threshold = bigger blobs
       // If there's already a pixel of the clock underneath - invert the pixel so the clock stays visible
-      if(getxy_framebuffer(x, y)) {
+      if (getxy_framebuffer(x, y)) {
         setxy_framebuffer(x, y, !pixel);
       } else {
         setxy_framebuffer(x, y, pixel);
@@ -403,7 +401,7 @@ void draw_small_clock(uint8_t hour, uint8_t minute, int8_t temperature, bool ren
     }
   }
 
-  if(render_to_screen) render_framebuffer_to_screen();
+  if (render_to_screen) render_framebuffer_to_screen();
 }
 
 void draw_small_clock_with_seconds(uint8_t hour, uint8_t minute, uint8_t seconds) {
@@ -437,7 +435,9 @@ void show_detailed_status() {
   size_t size = sizeof(dest);
   snprintf_P(dest,
              size,
-             PSTR("auraZigbee  %u. %s %02u. %s  Uptime: %s  Temperature: %.1f°C  Humidity: %.0f%%  Light level: %.0f lx  Zigbee PAN ID: 0x%02x  Zigbee channel: %u"),
+             PSTR("auraZigbee  %u. %s %02u. %s  Uptime: %s  "
+              "Temperature: %.1f°C  Humidity: %.0f%%  Light level: %.0f lx  "
+              "Zigbee PAN ID: 0x%02x  Zigbee channel: %u"),
              rtc.get_year(),
              rtc.get_month_str(),
              rtc.get_day(),
@@ -447,8 +447,7 @@ void show_detailed_status() {
              modulino_humidity,
              light_level,
              Zigbee.getPanId(),
-             Zigbee.getChannel()
-            );
+             Zigbee.getChannel());
   Serial.println(dest);
   setup_text_scroll((String)dest);
   text_scroll_in_progress = true;
@@ -523,7 +522,8 @@ void display_auto_brightness_task(bool turn_off_in_darkness) {
   if (display_brightness > 15) {
     display_brightness = 15;
   }
-  // Serial.printf("Light level: %.02f lx | Average light level: %.02f lx | Display brightness: %u\n", light_level, light_value_rolling_avg, display_brightness);
+  // Serial.printf("Light level: %.02f lx | Average light level: %.02f lx | Display brightness: %u\n", light_level, light_value_rolling_avg,
+  // display_brightness);
 
   // Turn off screen if it's dark
   if (turn_off_in_darkness) {
