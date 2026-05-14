@@ -44,6 +44,7 @@ ZigbeeLightbulb zigbee_bulb;
 
 volatile bool zigbee_time_updated = false;
 volatile bool button_pressed = false;
+volatile bool text_scroll_in_progress = false;
 
 void onZigbeeTimeUpdated()
 {
@@ -117,6 +118,10 @@ void loop() {
   refresh_screen();
   MillisRTC::getInstance().update();
   handle_button_actions();
+
+  if (text_scroll_in_progress) {
+    return;
+  }
 
   uint32_t millis_curr = millis();
   static uint32_t task_100ms_timer = 0;
@@ -263,6 +268,7 @@ void refresh_screen() {
   // Scroll the text if needed - go to the first style when finished
   if (clock_style == CLOCKSTYLE_DETAILED_STATUS) {
     if (!scroll_text()) {
+      text_scroll_in_progress = false;
       clock_style = CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP;
       uint8_t hour = rtc.get_hour();
       uint8_t min = rtc.get_minute();
@@ -434,9 +440,9 @@ void show_detailed_status() {
   size_t size = sizeof(dest);
   snprintf_P(dest,
              size,
-             PSTR("auraZigbee  %u. %02u. %02u. %s  Uptime: %s  Temperature: %.1f°C  Humidity: %.0f%%  Light level: %.0f lx  Zigbee PAN ID: 0x%02x  Zigbee channel: %u"),
+             PSTR("auraZigbee  %u. %s %02u. %s  Uptime: %s  Temperature: %.1f°C  Humidity: %.0f%%  Light level: %.0f lx  Zigbee PAN ID: 0x%02x  Zigbee channel: %u"),
              rtc.get_year(),
-             rtc.get_month(),
+             rtc.get_month_str(),
              rtc.get_day(),
              rtc.get_dayname_str(),
              Uptime::getInstance().get_uptime_string().c_str(),
@@ -448,6 +454,7 @@ void show_detailed_status() {
             );
   Serial.println(dest);
   setup_text_scroll((String)dest);
+  text_scroll_in_progress = true;
 }
 
 void handle_button_press() {

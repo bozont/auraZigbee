@@ -113,6 +113,11 @@ public:
     return 1; // fallback
   }
 
+  const char* get_month_str(void) {
+    static const char* names[] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+    return names[this->get_month() - 1];
+  }
+
   uint8_t get_day(void) {
     static const uint8_t days_in_month[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
