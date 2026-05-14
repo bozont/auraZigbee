@@ -65,10 +65,10 @@ void setup() {
   lightSensor.begin();
   Modulino.begin();
   modulino_thermo.begin();
-
-  Serial.println("Initializing display...");
   delay(200);
+
   // Boot the screen
+  Serial.println("Initializing display...");
   lc.begin();
   display_on_off(true);
   display_set_brightness(0);
@@ -81,6 +81,7 @@ void setup() {
   render_framebuffer_to_screen();
   Serial.println("Display initialized");
 
+  // Initialize Zigbee
   Zigbee.setVendorName("Bozont Labs Inc.");
   Zigbee.setProductName("auraZigbee");
   Zigbee.setFirmwareVersion(0x00000420);
@@ -107,6 +108,7 @@ void setup() {
   Serial.print("PAN ID: 0x");
   Serial.println(Zigbee.getPanId(), HEX);
 
+  // Perform initial temperature and humidity measurements
   modulino_temp = floor(modulino_thermo.getTemperature() * 10) / 10.0 + modulino_temp_calibration;
   modulino_humidity= floor(modulino_thermo.getHumidity());
 
@@ -231,10 +233,8 @@ void refresh_screen() {
     seconds_prev = second;
     uint8_t hour = rtc.get_hour();
     uint8_t min = rtc.get_minute();
-    // Serial.printf("%lu / %lu (max: %lu)\n", getUsedHeapSize(), getTotalHeapSize(), getHeapHighWatermark());
 
     if (clock_style == CLOCKSTYLE_SMALL_WITH_SECONDS) {
-      // printf("%u:%02u:%02u\n", hour, min, second);
       draw_small_clock_with_seconds(hour, min, second);
     }
 
@@ -252,10 +252,7 @@ void refresh_screen() {
     static uint8_t min_prev = 61;
     if (min != min_prev) {
       min_prev = min;
-      // Serial.printf("%u:%02u\n", hour, min);
-      if (clock_style == CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP) {
-        // draw_small_clock(hour, min, (int8_t)(tempSensor.getTemperature() + temp_sensor_calibration));
-      } else if (clock_style == CLOCKSTYLE_BIG) {
+      if (clock_style == CLOCKSTYLE_BIG) {
         draw_clock(hour, min);
       }
     }
@@ -526,8 +523,7 @@ void display_auto_brightness_task(bool turn_off_in_darkness) {
   if (display_brightness > 15) {
     display_brightness = 15;
   }
-  // Serial.printf("Light level: %.02f lx | Average light level: %.02f lx | Display brightness: %u\n", light_level, light_value_rolling_avg,
-  // display_brightness);
+  // Serial.printf("Light level: %.02f lx | Average light level: %.02f lx | Display brightness: %u\n", light_level, light_value_rolling_avg, display_brightness);
 
   // Turn off screen if it's dark
   if (turn_off_in_darkness) {
@@ -552,6 +548,7 @@ void display_auto_brightness_task(bool turn_off_in_darkness) {
     display_brightness_prev = display_brightness;
   }
 
+  // Update the Zigbee light sensor with the rolling average value every 5 seconds
   uint32_t millis_curr = millis();
   static uint32_t zigbee_light_last_update = 0;
   if (zigbee_light_last_update + 5000u < millis_curr) {
@@ -631,7 +628,7 @@ bool syncNTP() {
              ts.tm_hour,
              ts.tm_min,
              ts.tm_sec);
-    Serial.println(time_buf);
+    Serial.printf("Current date and time: %s\n", time_buf);
 
     Serial.println("Zigbee time sync finished");
     return true;

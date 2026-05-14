@@ -38,6 +38,8 @@ public:
     return instance;
   }
 
+  // Updates the internal RTC counter based on the elapsed time since the last update
+  // Call this regularly to keep the clock running
   void update() {
     uint32_t now = millis();
     uint32_t elapsed = now - last_millis; // rollover-safe
@@ -53,6 +55,7 @@ public:
     }
   }
 
+  // Sets the current time from a Unix timestamp (seconds since 1970-01-01 00:00:00 UTC)
   void set_from_unix(time_t unix_ts) {
     noInterrupts();
     this->device_rtc_clock = unix_ts;
@@ -60,14 +63,17 @@ public:
     interrupts();
   }
 
+  // Returns the current time as a Unix timestamp
   time_t get_unix() {
     return this->device_rtc_clock;
   }
 
-  static uint8_t is_leap_year(uint16_t year) {
+  // Return if the provided year is a leap year
+  bool is_leap_year(uint16_t year) {
     return ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0));
   }
 
+  // Returns the current year
   uint16_t get_year(void) {
     uint32_t seconds = this->device_rtc_clock;
     uint16_t year = 1970;
@@ -84,6 +90,7 @@ public:
     return year;
   }
 
+  // Returns the current month (1–12)
   uint8_t get_month(void) {
     static const uint8_t days_in_month[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
@@ -113,11 +120,13 @@ public:
     return 1; // fallback
   }
 
+  // Returns the current month name as a string
   const char* get_month_str(void) {
     static const char* names[] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
     return names[this->get_month() - 1];
   }
 
+  // Returns the current day of the month (1–31)
   uint8_t get_day(void) {
     static const uint8_t days_in_month[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
@@ -147,24 +156,29 @@ public:
     return 1;
   }
 
+  // Returns the current day of the week (0–6, where 0 = Sunday, 1 = Monday, ..., 6 = Saturday)
   uint8_t get_dayname(void) {
     // 1970-01-01 was a Thursday (4)
     return (uint8_t)((this->device_rtc_clock / 86400UL + 4) % 7);
   }
 
+  // Returns the current day of the week as a string
   const char* get_dayname_str(void) {
     static const char* names[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
     return names[this->get_dayname()];
   }
 
+  // Returns the current second (0–59)
   uint8_t get_second() {
     return this->device_rtc_clock % 60;
   }
 
+  // Returns the current minute (0–59)
   uint8_t get_minute() {
     return (this->device_rtc_clock / 60) % 60;
   }
 
+  // Returns the current hour (0–23)
   uint8_t get_hour() {
     return (this->device_rtc_clock / 3600) % 24;
   }
