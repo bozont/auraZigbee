@@ -655,7 +655,7 @@ void display_onoff_handler_task() {
     return;
   }
 
-  if (display_wake_timer_running && ((millis() - display_wake_start) > 20000u)) {
+  if (display_wake_timer_running && ((millis() - display_wake_start) > 10000u)) {
     Serial.println("Screen OFF (Wake timer)");
     display_wake_timer_running = false;
     display_on_off(false);
@@ -675,6 +675,13 @@ void display_onoff_handler_task() {
     }
     return;
   }
+
+  // Initial cooldown on the autobrightness on/off to let the display stay on during startup even in complete darkness
+  static bool initial_cooldown = true;
+  if(initial_cooldown && millis() < 10000) {
+    return;
+  }
+  initial_cooldown = false;
 
   if (display_on_autobrightness != display_on_autobrightness_prev) {
     display_on_autobrightness_prev = display_on_autobrightness;
