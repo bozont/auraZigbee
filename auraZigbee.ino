@@ -46,6 +46,9 @@ volatile bool zigbee_time_updated = false;
 volatile bool button_pressed = false;
 volatile bool text_scroll_in_progress = false;
 
+bool display_on_autobrightness = true;
+bool display_wake_requested = false;
+
 void onZigbeeTimeUpdated() {
   zigbee_time_updated = true;
 }
@@ -453,6 +456,12 @@ void handle_button_actions() {
   // Cancel any ongoing text scrolling
   text_scroll_in_progress = false;
 
+  // Request a display wake is it's off
+  if(!display_get_on_off()) {
+    display_wake_requested = true;
+    return;
+  }
+
   clock_style = (clock_styles_t)((int)clock_style + 1);
   if (clock_style >= CLOCKSTYLE_MAX) {
     clock_style = (clock_styles_t)0;
@@ -476,8 +485,6 @@ void handle_button_actions() {
   Serial.print("Clock style: ");
   Serial.println(clock_style);
 }
-
-bool display_on_autobrightness = true;
 
 void display_auto_brightness_task(bool turn_off_in_darkness) {
   const uint32_t turn_off_threshold_lx = 1.0f;
@@ -630,8 +637,36 @@ void display_onoff_handler_task() {
   bool display_on_zigbee = zigbee_bulb.get_onoff();
   static bool display_on_autobrightness_prev = true;
 
+  static uint32_t display_wake_start = 0u;
+  static bool display_wake_timer_running = false;
+
+  if (display_wake_requested) {
+    display_wake_requested = false;
+    // If the display is already on we don't need to do anything
+    if (display_get_on_off()) {
+      return;
+    }
+    display_on_off(true);
+    zigbee_bulb.set_onoff(true);
+    display_on_zigbee_prev = true;
+    Serial.println("Screen ON (Button)");
+    display_wake_start = millis();
+    display_wake_timer_running = true;
+    return;
+  }
+
+  if (display_wake_timer_running && ((millis() - display_wake_start) > 20000u)) {
+    Serial.println("Screen OFF (Wake timer)");
+    display_wake_timer_running = false;
+    display_on_off(false);
+    zigbee_bulb.set_onoff(false);
+    display_on_zigbee_prev = false;
+    return;
+  }
+
   if (display_on_zigbee != display_on_zigbee_prev) {
     display_on_zigbee_prev = display_on_zigbee;
+    display_wake_timer_running = false;
     display_on_off(display_on_zigbee);
     if (display_on_zigbee) {
       Serial.println("Screen ON (Zigbee)");
@@ -643,6 +678,7 @@ void display_onoff_handler_task() {
 
   if (display_on_autobrightness != display_on_autobrightness_prev) {
     display_on_autobrightness_prev = display_on_autobrightness;
+    display_wake_timer_running = false;
     display_on_off(display_on_autobrightness);
     if (display_on_autobrightness) {
       Serial.println("Screen ON (Autobrightness)");
