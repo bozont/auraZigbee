@@ -132,31 +132,13 @@ void loop() {
     modulino_thermo_measure();
     handle_zigbee_identify();
     Uptime::getInstance().update();
-    handle_zigbee_display_onoff();
+    display_onoff_handler_task();
   }
 
   static uint32_t task_1min_timer = 0;
   if (task_1min_timer + 60000u < millis_curr) {
     task_1min_timer = millis_curr;
     Serial.printf("Uptime: %s\n", Uptime::getInstance().get_uptime_string().c_str());
-  }
-}
-
-void handle_zigbee_display_onoff() {
-  // Handle on/off state changes from the network
-  static bool bulb_prev_state = false;
-  bool bulb_current_state = zigbee_bulb.get_onoff();
-  // If the current state is ON and the previous was OFF - turn on the LED
-  if (bulb_current_state && !bulb_prev_state) {
-    bulb_prev_state = bulb_current_state;
-    display_on_off(true);
-    Serial.println("Screen ON");
-  }
-  // If the current state is OFF and the previous was ON - turn off the LED
-  if (!bulb_current_state && bulb_prev_state) {
-    bulb_prev_state = bulb_current_state;
-    display_on_off(false);
-    Serial.println("Screen OFF");
   }
 }
 
@@ -495,6 +477,8 @@ void handle_button_actions() {
   Serial.println(clock_style);
 }
 
+bool display_on_autobrightness = true;
+
 void display_auto_brightness_task(bool turn_off_in_darkness) {
   const uint32_t turn_off_threshold_lx = 1.0f;
   const uint32_t turn_on_threshold_lx = 2.0f;
@@ -530,13 +514,13 @@ void display_auto_brightness_task(bool turn_off_in_darkness) {
   // Turn off screen if it's dark
   if (turn_off_in_darkness) {
     if (light_value_rolling_avg <= turn_off_threshold_lx && display_on) {
-      display_on_off(false);
+      display_on_autobrightness = false;
       display_on = false;
-      Serial.printf("Display OFF; Light level: %.02f lx | Average light level: %.02f lx\n", light_level, light_value_rolling_avg);
+      Serial.printf("Autobrightness display OFF; Light level: %.02f lx | Average light level: %.02f lx\n", light_level, light_value_rolling_avg);
     } else if (light_value_rolling_avg >= turn_on_threshold_lx && !display_on) {
-      display_on_off(true);
+      display_on_autobrightness = true;
       display_on = true;
-      Serial.printf("Display ON; Light level: %.02f lx | Average light level: %.02f lx\n", light_level, light_value_rolling_avg);
+      Serial.printf("Autobrightness display ON; Light level: %.02f lx | Average light level: %.02f lx\n", light_level, light_value_rolling_avg);
     }
   }
 
@@ -641,8 +625,42 @@ bool syncNTP() {
   return false;
 }
 
+void display_onoff_handler_task() {
+  static bool display_on_zigbee_prev = true;
+  bool display_on_zigbee = zigbee_bulb.get_onoff();
+  static bool display_on_autobrightness_prev = true;
+
+  if (display_on_zigbee != display_on_zigbee_prev) {
+    display_on_zigbee_prev = display_on_zigbee;
+    display_on_off(display_on_zigbee);
+    if (display_on_zigbee) {
+      Serial.println("Screen ON (Zigbee)");
+    } else {
+      Serial.println("Screen OFF (Zigbee)");
+    }
+    return;
+  }
+
+  if (display_on_autobrightness != display_on_autobrightness_prev) {
+    display_on_autobrightness_prev = display_on_autobrightness;
+    display_on_off(display_on_autobrightness);
+    if (display_on_autobrightness) {
+      Serial.println("Screen ON (Autobrightness)");
+    } else {
+      Serial.println("Screen OFF (Autobrightness)");
+    }
+    // Sync with Zigbee
+    zigbee_bulb.set_onoff(display_on_autobrightness);
+    display_on_zigbee_prev = display_on_autobrightness;
+  }
+}
+
 void display_on_off(bool onoff) {
   lc.setDisplayOn(onoff);
+}
+
+bool display_get_on_off() {
+  return lc.getDisplayOn();
 }
 
 void display_set_brightness(uint8_t brightness) {
