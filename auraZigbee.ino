@@ -511,9 +511,13 @@ void display_auto_brightness_task(bool turn_off_in_darkness) {
   }
   light_value_rolling_avg = sum / light_value_history.size();
 
-  uint32_t display_brightness = light_value_rolling_avg / 100;
-  if (display_brightness > 15) {
-    display_brightness = 15;
+  const uint32_t display_brightness_min_lx = 0.0f;
+  const uint32_t display_brightness_max_lx = 1800.0f;
+  const uint32_t display_brightness_min_unit = 0u;
+  const uint32_t display_brightness_max_unit = 15u;
+  uint32_t display_brightness = map(light_value_rolling_avg, display_brightness_min_lx, display_brightness_max_lx, display_brightness_min_unit, display_brightness_max_unit);
+  if (display_brightness > display_brightness_max_unit) {
+    display_brightness = display_brightness_max_unit;
   }
   // Serial.printf("Light level: %.02f lx | Average light level: %.02f lx | Display brightness: %u\n", light_level, light_value_rolling_avg,
   // display_brightness);
