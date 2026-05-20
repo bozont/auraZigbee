@@ -1,5 +1,4 @@
 #include <Arduino_Modulino.h>
-#include <BH1750.h>
 #include <SPI.h>
 #include <WatchdogTimer.h>
 #include <bozontlabsMAX7219.h>
@@ -25,7 +24,7 @@ void draw_small_clock(uint8_t hour, uint8_t minute, int8_t temperature, bool ren
 #define NTP_SYNC_FREQUENCY_HOURS 1
 
 ModulinoThermo modulino_thermo;
-BH1750 lightSensor;
+ModulinoLight modulino_light;
 
 const float modulino_temp_calibration = -2.0f;
 float modulino_temp = 0.0f;
@@ -64,9 +63,9 @@ void setup() {
   attachInterrupt(BTN_BUILTIN, &handle_button_press, FALLING);
 
   Wire.begin();
-  lightSensor.begin();
   Modulino.begin();
   modulino_thermo.begin();
+  modulino_light.begin();
   delay(200);
 
   // Boot the screen
@@ -496,7 +495,8 @@ void display_auto_brightness_task(bool turn_off_in_darkness) {
   static std::vector<float> light_value_history;
   const uint8_t light_value_history_size = 20u;
 
-  light_level = lightSensor.readLightLevel();
+  modulino_light.update();
+  light_level = modulino_light.getAL();
   if (first_run) {
     for (uint8_t i = 0; i < light_value_history_size; i++) {
       light_value_history.push_back(light_level);
