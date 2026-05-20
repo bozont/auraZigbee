@@ -24,7 +24,7 @@ void draw_small_clock(uint8_t hour, uint8_t minute, int8_t temperature, bool ren
 #define NTP_SYNC_FREQUENCY_HOURS 1
 
 ModulinoThermo modulino_thermo;
-ModulinoLight modulino_light;
+LTR381RGBClass modulino_light(Wire, 0x53);
 
 const float modulino_temp_calibration = -2.0f;
 float modulino_temp = 0.0f;
@@ -495,8 +495,9 @@ void display_auto_brightness_task(bool turn_off_in_darkness) {
   static std::vector<float> light_value_history;
   const uint8_t light_value_history_size = 20u;
 
-  modulino_light.update();
-  light_level = modulino_light.getAL();
+  int light_reading = 0;
+  modulino_light.readAmbientLight(light_reading);
+  light_level = (float)light_reading;
   if (first_run) {
     for (uint8_t i = 0; i < light_value_history_size; i++) {
       light_value_history.push_back(light_level);
