@@ -252,7 +252,7 @@ void refresh_screen() {
       uint8_t min = rtc.get_minute();
       draw_small_clock(hour, min, (int8_t)round(modulino_temp));
     } else {
-      delay(5);
+      delay(7);
     }
   }
 }
@@ -513,7 +513,7 @@ void display_auto_brightness_task(bool turn_off_in_darkness) {
   light_value_rolling_avg = sum / light_value_history.size();
 
   const uint32_t display_brightness_min_lx = 0.0f;
-  const uint32_t display_brightness_max_lx = 1800.0f;
+  const uint32_t display_brightness_max_lx = 2500.0f;
   const uint32_t display_brightness_min_unit = 0u;
   const uint32_t display_brightness_max_unit = 15u;
   uint32_t display_brightness = map(light_value_rolling_avg, display_brightness_min_lx, display_brightness_max_lx, display_brightness_min_unit, display_brightness_max_unit);
