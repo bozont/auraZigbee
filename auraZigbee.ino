@@ -41,6 +41,7 @@ ZigbeeHumiditySensor zigbee_humidity_sensor;
 ZigbeeLightSensor zigbee_light_sensor;
 ZigbeeLightbulb zigbee_bulb;
 
+volatile bool zigbee_time_initial_update_done = false;
 volatile bool zigbee_time_updated = false;
 volatile bool button_pressed = false;
 volatile bool text_scroll_in_progress = false;
@@ -81,6 +82,7 @@ void setup() {
   render_text_to_framebuffer("hello", 0, 0);
   render_framebuffer_to_screen();
   Serial.println("Display initialized");
+  delay(500);
 
   // Initialize Zigbee
   Zigbee.setVendorName("Bozont Labs Inc.");
@@ -106,26 +108,42 @@ void setup() {
 
   // Wait for the Zigbee network to be joined
   Serial.println("Waiting for Zigbee network...");
+  if (!Zigbee.isJoinedToNetwork()) {
+    digitalWrite(LED_BUILTIN_2, LED_BUILTIN_ACTIVE);
+    clear_framebuffer();
+    draw_num(0, 0, LEDMATRIX_ICON_WIFI);
+    render_framebuffer_to_screen();
+  }
   while (!Zigbee.isJoinedToNetwork()) {
-    delay(200);
+    draw_loading_screen();
+    delay(5);
     WatchdogTimer.feed();
   }
+  digitalWrite(LED_BUILTIN_2, LED_BUILTIN_INACTIVE);
   Serial.printf("Joined Zigbee network; PAN_ID='0x%02x' channel='%u'\n", Zigbee.getPanId(), Zigbee.getChannel());
 
   WatchdogTimer.feed();
+
+  clear_framebuffer();
+  render_framebuffer_to_screen();
 }
 
 void loop() {
   WatchdogTimer.feed();
-  refresh_screen();
-  MillisRTC::getInstance().update();
-  handle_button_actions();
+
+  uint32_t millis_curr = millis();
+  static uint32_t task_2ms_timer = 0;
+  if (task_2ms_timer + 2u < millis_curr) {
+    task_2ms_timer = millis_curr;
+    refresh_screen();
+    MillisRTC::getInstance().update();
+    handle_button_actions();
+  }
 
   if (text_scroll_in_progress) {
     return;
   }
 
-  uint32_t millis_curr = millis();
   static uint32_t task_100ms_timer = 0;
   if (task_100ms_timer + 100u < millis_curr) {
     task_100ms_timer = millis_curr;
@@ -197,7 +215,8 @@ typedef enum {
   CLOCKSTYLE_PLASMA,
   CLOCKSTYLE_BIG,
   CLOCKSTYLE_DETAILED_STATUS,
-  CLOCKSTYLE_MAX
+  CLOCKSTYLE_MAX,
+  CLOCKSTYLE_LOADING
 } clock_styles_t;
 
 static clock_styles_t clock_style = CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP;
@@ -205,6 +224,19 @@ static clock_styles_t clock_style = CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP;
 void refresh_screen() {
   if (!lc.getDisplayOn()) {
     return;
+  }
+
+  // Draw the loading screen if the clock is not synced yet
+  static bool zigbee_time_initial_update_done_prev = false;
+  if (!zigbee_time_initial_update_done) {
+    draw_loading_screen();
+    return;
+  }
+  // Clear the screen after the loading animation
+  if (zigbee_time_initial_update_done != zigbee_time_initial_update_done_prev) {
+    zigbee_time_initial_update_done_prev = zigbee_time_initial_update_done;
+    clear_framebuffer();
+    render_framebuffer_to_screen();
   }
 
   MillisRTC& rtc = MillisRTC::getInstance();
@@ -436,6 +468,38 @@ void show_detailed_status() {
   text_scroll_in_progress = true;
 }
 
+void draw_loading_screen() {
+  static uint8_t wait_cycles = 20u;
+  static const uint8_t anim_x_offset = 15u;
+  static const uint8_t anim_y_offset = 4u;
+
+  if(wait_cycles != 0) {
+      wait_cycles--;
+      return;
+  } else {
+      wait_cycles = 20u;
+  }
+
+  static bool led_states[4] = {0,0,0,0};
+  static uint8_t anim_cnt = 0;
+
+  if(anim_cnt < 4) {
+      led_states[anim_cnt] = true;
+  } else if(anim_cnt < 8) {
+      led_states[anim_cnt-4] = false;
+  }
+
+  anim_cnt++;
+  if(anim_cnt == 8) anim_cnt = 0;
+
+  setxy_framebuffer(anim_x_offset  , anim_y_offset, led_states[0]);
+  setxy_framebuffer(anim_x_offset+1, anim_y_offset, led_states[1]);
+  setxy_framebuffer(anim_x_offset+2, anim_y_offset, led_states[2]);
+  setxy_framebuffer(anim_x_offset+3, anim_y_offset, led_states[3]);
+  render_framebuffer_to_screen();
+}
+
+
 void handle_button_press() {
   static uint32_t btn_last_press = 0;
   if (millis() < btn_last_press + 200) {
@@ -555,32 +619,46 @@ void display_auto_brightness_task(bool turn_off_in_darkness) {
   }
 }
 
-enum ntp_state_e : uint8_t { NTP_INIT = 0, NTP_SYNC_IN_PROGRESS, NTP_SLEEP, NTP_SYNC_FAILED };
+enum ntp_state_e : uint8_t {
+  NTP_INIT = 0,
+  NTP_SYNC_IN_PROGRESS,
+  NTP_SLEEP,
+  NTP_SYNC_WAIT_RESPONSE
+};
 
 void ntpTask() {
   static ntp_state_e state = NTP_INIT;
   static uint32_t last_sync_sec = 0u;
-  static const uint32_t SYNC_FAILED_RETRY_TIME_SEC = 10u;
+  static const uint32_t SYNC_RECHECK_TIME_SEC = 5u;
 
   switch (state) {
   case NTP_INIT:
     state = NTP_SYNC_IN_PROGRESS;
+    requestNTPSync();
     break;
 
-  case NTP_SYNC_IN_PROGRESS:
-    if (syncNTP()) {
+  case NTP_SYNC_IN_PROGRESS: {
+    static uint32_t no_response_cnt = 0u;
+    if (checkTimeSyncStatus()) {
       state = NTP_SLEEP;
       last_sync_sec = millis() / 1000;
     } else {
-      state = NTP_SYNC_FAILED;
-      Serial.printf("Retrying sync in %d seconds...\n", SYNC_FAILED_RETRY_TIME_SEC);
+      state = NTP_SYNC_WAIT_RESPONSE;
+      Serial.printf("No time sync response received; checking again in %d seconds...\n", SYNC_RECHECK_TIME_SEC);
+      no_response_cnt++;
+      if (no_response_cnt >= 3u) {
+        no_response_cnt = 0u;
+        state = NTP_SYNC_IN_PROGRESS;
+        requestNTPSync();
+        Serial.printf("No time sync response received %u times; requesting sync again...\n", no_response_cnt);
+      }
     }
-    break;
+  } break;
 
-  case NTP_SYNC_FAILED: {
-    static uint32_t last_failed_sync_time = 0u;
-    if (millis() - last_failed_sync_time >= (uint32_t)SYNC_FAILED_RETRY_TIME_SEC * 1000u) {
-      last_failed_sync_time = millis();
+  case NTP_SYNC_WAIT_RESPONSE: {
+    static uint32_t last_sync_check_time = 0u;
+    if (millis() - last_sync_check_time >= (uint32_t)SYNC_RECHECK_TIME_SEC * 1000u) {
+      last_sync_check_time = millis();
       state = NTP_SYNC_IN_PROGRESS;
     }
   } break;
@@ -590,6 +668,7 @@ void ntpTask() {
     uint32_t next_sync_time = last_sync_sec + NTP_SYNC_FREQUENCY_HOURS * 3600u;
     if (uptime_sec >= next_sync_time) {
       state = NTP_SYNC_IN_PROGRESS;
+      requestNTPSync();
     }
   } break;
 
@@ -599,15 +678,17 @@ void ntpTask() {
   }
 }
 
-bool syncNTP() {
-  Serial.println("Starting Zigbee time sync...");
+void requestNTPSync() {
+  Serial.println("Requesting Zigbee time sync...");
+  zigbee_time_updated = false;
   zigbee_time.requestTime();
+}
 
-  delay(1000);
-
+bool checkTimeSyncStatus() {
   if (zigbee_time_updated) {
+    Serial.println("Zigbee time sync response received");
     MillisRTC& rtc = MillisRTC::getInstance();
-    zigbee_time_updated = false;
+    zigbee_time_initial_update_done = true;
     uint32_t current_ntp_time = zigbee_time.getLocalUnixTime();
     rtc.set_from_unix(current_ntp_time);
     Serial.printf("Current NTP time: %lu\n", current_ntp_time);
@@ -632,7 +713,6 @@ bool syncNTP() {
     return true;
   }
 
-  Serial.println("Zigbee time sync failed");
   yield();
   return false;
 }
