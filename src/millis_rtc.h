@@ -41,8 +41,7 @@ public:
   // Updates the internal RTC counter based on the elapsed time since the last update
   // Call this regularly to keep the clock running
   void update() {
-    uint32_t now = millis();
-    uint32_t elapsed = now - last_millis; // rollover-safe
+    uint32_t elapsed = millis() - this->last_millis; // rollover-safe
 
     if (elapsed >= 1000) {
       uint32_t seconds = elapsed / 1000;
@@ -51,7 +50,7 @@ public:
       this->device_rtc_clock += seconds;
       interrupts();
 
-      last_millis += seconds * 1000;
+      this->last_millis += seconds * 1000;
     }
   }
 
@@ -59,7 +58,7 @@ public:
   void set_from_unix(time_t unix_ts) {
     noInterrupts();
     this->device_rtc_clock = unix_ts;
-    last_millis = millis();
+    this->last_millis = millis();
     interrupts();
   }
 
@@ -79,7 +78,7 @@ public:
     uint16_t year = 1970;
 
     while (1) {
-      uint32_t year_seconds = this->is_leap_year(year) ? 31622400UL : 31536000UL;
+      uint32_t year_seconds = this->get_seconds_in_year(year);
       if (seconds < year_seconds) {
         break;
       }
@@ -99,7 +98,7 @@ public:
 
     // Remove whole years
     while (1) {
-      uint32_t year_seconds = this->is_leap_year(year) ? 31622400UL : 31536000UL;
+      uint32_t year_seconds = this->get_seconds_in_year(year);
       if (seconds < year_seconds) break;
       seconds -= year_seconds;
       year++;
@@ -135,7 +134,7 @@ public:
 
     // Remove years
     while (1) {
-      uint32_t year_seconds = this->is_leap_year(year) ? 31622400UL : 31536000UL;
+      uint32_t year_seconds = this->get_seconds_in_year(year);
       if (seconds < year_seconds) break;
       seconds -= year_seconds;
       year++;
@@ -193,4 +192,8 @@ private:
 
   MillisRTC(const MillisRTC&) = delete;
   MillisRTC& operator=(const MillisRTC&) = delete;
+
+  uint32_t get_seconds_in_year(uint16_t year) {
+    return this->is_leap_year(year) ? 31622400UL : 31536000UL;
+  }
 };
