@@ -33,8 +33,7 @@ void setup() {
   Serial.println("auraSmartClock Zigbee Edition (tm)");
   pinMode(LED_BUILTIN_2, OUTPUT);
   digitalWrite(LED_BUILTIN_2, LED_BUILTIN_INACTIVE);
-  pinMode(BTN_BUILTIN, INPUT_PULLUP);
-  attachInterrupt(BTN_BUILTIN, &handle_button_press, FALLING);
+  ButtonHandler::getInstance().begin();
 
   Wire.begin();
   SensorHandler& sensor_handler = SensorHandler::getInstance();
@@ -98,7 +97,7 @@ void loop() {
     task_2ms_timer = millis_curr;
     refresh_screen();
     MillisRTC::getInstance().update();
-    handle_button_actions();
+    ButtonHandler::getInstance().task();
   }
 
   if (text_scroll_in_progress) {
