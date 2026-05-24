@@ -36,7 +36,8 @@ public:
     }
 
     // Cancel any ongoing text scrolling
-    text_scroll_in_progress = false;
+    DisplayHandler& display_handler = DisplayHandler::getInstance();
+    display_handler.stop_text_scroll();
 
     // Request a display wake is it's off
     if (!lc.getDisplayOn()) {
@@ -44,28 +45,8 @@ public:
       return;
     }
 
-    clock_style = (clock_styles_t)((int)clock_style + 1);
-    if (clock_style >= CLOCKSTYLE_MAX) {
-      clock_style = (clock_styles_t)0;
-    }
-    MillisRTC& rtc = MillisRTC::getInstance();
-    uint8_t hour = rtc.get_hour();
-    uint8_t min = rtc.get_minute();
-    uint8_t second = rtc.get_second();
-    if (clock_style == CLOCKSTYLE_SMALL_WITH_SECONDS) {
-      draw_small_clock_with_seconds(hour, min, second);
-    }
-    if (clock_style == CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP) {
-      draw_small_clock(hour, min, (int8_t)round(SensorHandler::getInstance().get_temperature()));
-    }
-    if (clock_style == CLOCKSTYLE_BIG) {
-      draw_clock(hour, min);
-    }
-    if (clock_style == CLOCKSTYLE_DETAILED_STATUS) {
-      show_detailed_status();
-    }
-    Serial.print("Clock style: ");
-    Serial.println(clock_style);
+    // Request the next clock style if the display is on
+    display_handler.request_next_clock_style();
   }
 
 private:

@@ -10,19 +10,18 @@
 #include <ZigbeeTimeClient.h>
 #include <time.h>
 
-#include "src/millis_rtc.h"
-
 #define LC_SPI_CS A0
 #define LC_NUMBER_OF_DEVICES 4
 bozontlabsMAX7219 lc = bozontlabsMAX7219(LC_SPI_CS, LC_NUMBER_OF_DEVICES);
 
+#include "src/millis_rtc.h"
 #include "src/ledmatrix_font.h"
 #include "src/ledmatrix_gfx.h"
 #include "src/timesync_handler.h"
 #include "src/sensor_handler.h"
-#include "src/display_content_handler.h"
-#include "src/display_autobrightness_handler.h"
 #include "src/zigbee_handler.h"
+#include "src/display_handler.h"
+#include "src/display_autobrightness_handler.h"
 #include "src/display_onoff_handler.h"
 #include "src/button_handler.h"
 
@@ -42,16 +41,8 @@ void setup() {
 
   // Boot the screen
   Serial.println("Initializing display...");
-  lc.begin();
-  lc.setDisplayOn(true);
-  lc.setBrightness(0);
-  lc.clearDisplay();
-  memset(text_to_show_data, 0u, sizeof(text_to_show_data));
-  memset(ledmatrix_framebuffer, false, LEDMATRIX_WIDTH * LEDMATRIX_HEIGHT);
-  memset(ledmatrix_framebuffer_onscreen, false, (LEDMATRIX_WIDTH * LEDMATRIX_HEIGHT));
-  ledmatrix_ascii_table_init();
-  render_text_to_framebuffer("hello", 0, 0);
-  render_framebuffer_to_screen();
+  DisplayHandler& display_handler = DisplayHandler::getInstance();
+  display_handler.begin();
   Serial.println("Display initialized");
   delay(500);
 
@@ -75,7 +66,7 @@ void setup() {
     render_framebuffer_to_screen();
   }
   while (!Zigbee.isJoinedToNetwork()) {
-    draw_loading_screen();
+    DisplayHandler::getInstance().draw_loading_screen();
     delay(5);
     WatchdogTimer.feed();
   }
@@ -95,12 +86,12 @@ void loop() {
   static uint32_t task_2ms_timer = 0;
   if (task_2ms_timer + 2u < millis_curr) {
     task_2ms_timer = millis_curr;
-    refresh_screen();
+    DisplayHandler::getInstance().task();
     MillisRTC::getInstance().update();
     ButtonHandler::getInstance().task();
   }
 
-  if (text_scroll_in_progress) {
+  if (DisplayHandler::getInstance().get_text_scroll_in_progress()) {
     return;
   }
 
