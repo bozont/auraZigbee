@@ -77,9 +77,9 @@ void setup() {
   // Boot the screen
   Serial.println("Initializing display...");
   lc.begin();
-  display_on_off(true);
-  display_set_brightness(0);
-  display_clear();
+  lc.setDisplayOn(true);
+  lc.setBrightness(0);
+  lc.clearDisplay();
   memset(text_to_show_data, 0u, sizeof(text_to_show_data));
   memset(ledmatrix_framebuffer, false, LEDMATRIX_WIDTH * LEDMATRIX_HEIGHT);
   memset(ledmatrix_framebuffer_onscreen, false, (LEDMATRIX_WIDTH * LEDMATRIX_HEIGHT));
@@ -225,10 +225,10 @@ void display_onoff_handler_task() {
   if (display_wake_requested) {
     display_wake_requested = false;
     // If the display is already on we don't need to do anything
-    if (display_get_on_off()) {
+    if (lc.getDisplayOn()) {
       return;
     }
-    display_on_off(true);
+    lc.setDisplayOn(true);
     zigbee_bulb.set_onoff(true);
     display_on_zigbee_prev = true;
     Serial.println("Screen ON (Button)");
@@ -240,7 +240,7 @@ void display_onoff_handler_task() {
   if (display_wake_timer_running && ((millis() - display_wake_start) > 10000u)) {
     Serial.println("Screen OFF (Wake timer)");
     display_wake_timer_running = false;
-    display_on_off(false);
+    lc.setDisplayOn(false);
     zigbee_bulb.set_onoff(false);
     display_on_zigbee_prev = false;
     return;
@@ -249,7 +249,7 @@ void display_onoff_handler_task() {
   if (display_on_zigbee != display_on_zigbee_prev) {
     display_on_zigbee_prev = display_on_zigbee;
     display_wake_timer_running = false;
-    display_on_off(display_on_zigbee);
+    lc.setDisplayOn(display_on_zigbee);
     if (display_on_zigbee) {
       Serial.println("Screen ON (Zigbee)");
     } else {
@@ -268,7 +268,7 @@ void display_onoff_handler_task() {
   if (display_on_autobrightness != display_on_autobrightness_prev) {
     display_on_autobrightness_prev = display_on_autobrightness;
     display_wake_timer_running = false;
-    display_on_off(display_on_autobrightness);
+    lc.setDisplayOn(display_on_autobrightness);
     if (display_on_autobrightness) {
       Serial.println("Screen ON (Autobrightness)");
     } else {
@@ -278,22 +278,6 @@ void display_onoff_handler_task() {
     zigbee_bulb.set_onoff(display_on_autobrightness);
     display_on_zigbee_prev = display_on_autobrightness;
   }
-}
-
-void display_on_off(bool onoff) {
-  lc.setDisplayOn(onoff);
-}
-
-bool display_get_on_off() {
-  return lc.getDisplayOn();
-}
-
-void display_set_brightness(uint8_t brightness) {
-  lc.setBrightness(brightness);
-}
-
-void display_clear() {
-  lc.clearDisplay();
 }
 
 void max7219_set_pixel(uint8_t x, uint8_t y, bool value) {
