@@ -16,10 +16,7 @@
 
 #include "src/millis_rtc.h"
 
-void max7219_set_pixel(uint8_t x, uint8_t y, bool value);
 void draw_small_clock(uint8_t hour, uint8_t minute, int8_t temperature, bool render_to_screen = true);
-#include "src/ledmatrix_font.h"
-#include "src/ledmatrix_gfx.h"
 
 #define NTP_SYNC_FREQUENCY_HOURS 1
 
@@ -49,6 +46,8 @@ volatile bool text_scroll_in_progress = false;
 bool display_on_autobrightness = true;
 bool display_wake_requested = false;
 
+#include "src/ledmatrix_font.h"
+#include "src/ledmatrix_gfx.h"
 #include "src/timesync_handler.h"
 #include "src/display_content_handler.h"
 #include "src/button_handler.h"
@@ -277,17 +276,5 @@ void display_onoff_handler_task() {
     // Sync with Zigbee
     zigbee_bulb.set_onoff(display_on_autobrightness);
     display_on_zigbee_prev = display_on_autobrightness;
-  }
-}
-
-void max7219_set_pixel(uint8_t x, uint8_t y, bool value) {
-  if (x >= LEDMATRIX_WIDTH || y >= LEDMATRIX_HEIGHT) {
-    return;
-  }
-
-  // Only render the pixel if there's a change
-  if (ledmatrix_framebuffer_onscreen[x][y] != value) {
-    lc.setPixel(x, y, value);
-    ledmatrix_framebuffer_onscreen[x][y] = value;
   }
 }

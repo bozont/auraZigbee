@@ -10,6 +10,18 @@ int32_t txtscroll_last_character_end_position = LEDMATRIX_WIDTH + 1;
 uint32_t txtscroll_string_iter = 0u;
 const uint8_t* text_to_show_data[GFX_TEXTTOSHOW_BUFFER_SIZE];
 
+void max7219_set_pixel(uint8_t x, uint8_t y, bool value) {
+  if (x >= LEDMATRIX_WIDTH || y >= LEDMATRIX_HEIGHT) {
+    return;
+  }
+
+  // Only render the pixel if there's a change
+  if (ledmatrix_framebuffer_onscreen[x][y] != value) {
+    lc.setPixel(x, y, value);
+    ledmatrix_framebuffer_onscreen[x][y] = value;
+  }
+}
+
 void clear_framebuffer()
 {
   memset(ledmatrix_framebuffer, false, LEDMATRIX_WIDTH * LEDMATRIX_HEIGHT);
