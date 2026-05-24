@@ -22,6 +22,7 @@ public:
 
   void task() {
     this->refresh_screen();
+    this->display_onoff_handler();
   }
 
   void request_next_clock_style() {
@@ -127,6 +128,77 @@ public:
     }
   }
 
+  void display_onoff_handler() {
+    static bool display_on_zigbee_prev = true;
+    bool display_on_zigbee = zigbee_bulb.get_onoff();
+    static bool display_on_autobrightness_prev = true;
+
+    static uint32_t display_wake_start = 0u;
+    static bool display_wake_timer_running = false;
+
+    if (display_wake_requested) {
+      display_wake_requested = false;
+      // If the display is already on we don't need to do anything
+      if (lc.getDisplayOn()) {
+        return;
+      }
+      lc.setDisplayOn(true);
+      zigbee_bulb.set_onoff(true);
+      display_on_zigbee_prev = true;
+      Serial.println("Screen ON (Button)");
+      display_wake_start = millis();
+      display_wake_timer_running = true;
+      return;
+    }
+
+    if (display_wake_timer_running && ((millis() - display_wake_start) > 10000u)) {
+      Serial.println("Screen OFF (Wake timer)");
+      display_wake_timer_running = false;
+      lc.setDisplayOn(false);
+      zigbee_bulb.set_onoff(false);
+      display_on_zigbee_prev = false;
+      return;
+    }
+
+    if (display_on_zigbee != display_on_zigbee_prev) {
+      display_on_zigbee_prev = display_on_zigbee;
+      display_wake_timer_running = false;
+      lc.setDisplayOn(display_on_zigbee);
+      if (display_on_zigbee) {
+        Serial.println("Screen ON (Zigbee)");
+      } else {
+        Serial.println("Screen OFF (Zigbee)");
+      }
+      return;
+    }
+
+    // Initial cooldown on the autobrightness on/off to let the display stay on during startup even in complete darkness
+    static bool initial_cooldown = true;
+    if (initial_cooldown && millis() < 10000) {
+      return;
+    }
+    initial_cooldown = false;
+
+    bool display_on_autobrightness = DisplayAutobrightnessHandler::getInstance().get_display_on_autobrightness();
+    if (display_on_autobrightness != display_on_autobrightness_prev) {
+      display_on_autobrightness_prev = display_on_autobrightness;
+      display_wake_timer_running = false;
+      lc.setDisplayOn(display_on_autobrightness);
+      if (display_on_autobrightness) {
+        Serial.println("Screen ON (Autobrightness)");
+      } else {
+        Serial.println("Screen OFF (Autobrightness)");
+      }
+      // Sync with Zigbee
+      zigbee_bulb.set_onoff(display_on_autobrightness);
+      display_on_zigbee_prev = display_on_autobrightness;
+    }
+  }
+
+  void request_display_wake() {
+    this->display_wake_requested = true;
+  }
+
   void draw_loading_screen() {
     static uint8_t wait_cycles = 20u;
     static const uint8_t anim_x_offset = 14u;
@@ -171,6 +243,7 @@ private:
 
   clock_styles_t clock_style;
   bool text_scroll_in_progress;
+  bool display_wake_requested;
 
   void draw_plasma_clock(uint8_t hour, uint8_t minute, int8_t temperature) {
     uint32_t millis_curr = millis();
@@ -354,7 +427,8 @@ private:
 
   DisplayHandler()
       : clock_style(CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP)
-      , text_scroll_in_progress(false) {}
+      , text_scroll_in_progress(false)
+      , display_wake_requested(false) {}
 
   DisplayHandler(const DisplayHandler&) = delete;
   DisplayHandler& operator=(const DisplayHandler&) = delete;

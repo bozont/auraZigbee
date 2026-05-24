@@ -41,7 +41,7 @@ public:
 
     // Request a display wake is it's off
     if (!lc.getDisplayOn()) {
-      display_wake_requested = true;
+      display_handler.request_display_wake();
       return;
     }
 

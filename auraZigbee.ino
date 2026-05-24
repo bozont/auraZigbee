@@ -20,9 +20,8 @@ bozontlabsMAX7219 lc = bozontlabsMAX7219(LC_SPI_CS, LC_NUMBER_OF_DEVICES);
 #include "src/timesync_handler.h"
 #include "src/sensor_handler.h"
 #include "src/zigbee_handler.h"
-#include "src/display_handler.h"
 #include "src/display_autobrightness_handler.h"
-#include "src/display_onoff_handler.h"
+#include "src/display_handler.h"
 #include "src/button_handler.h"
 
 void setup() {
@@ -102,7 +101,6 @@ void loop() {
     TimesyncHandler::getInstance().task();
     SensorHandler::getInstance().task();
     DisplayAutobrightnessHandler::getInstance().task();
-    display_onoff_handler_task();
     ZigbeeHandler::getInstance().task();
   }
 
