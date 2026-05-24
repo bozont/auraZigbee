@@ -13,7 +13,7 @@ static clock_styles_t clock_style = CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP;
 void refresh_screen();
 void draw_plasma_clock(uint8_t hour, uint8_t minute, int8_t temperature);
 void draw_clock(uint8_t hour, uint8_t minute);
-void draw_small_clock(uint8_t hour, uint8_t minute, int8_t temperature, bool render_to_screen);
+void draw_small_clock(uint8_t hour, uint8_t minute, int8_t temperature, bool render_to_screen = true);
 void draw_small_clock_with_seconds(uint8_t hour, uint8_t minute, uint8_t seconds);
 void show_detailed_status();
 void draw_loading_screen();

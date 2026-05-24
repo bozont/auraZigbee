@@ -16,8 +16,6 @@
 
 #include "src/millis_rtc.h"
 
-void draw_small_clock(uint8_t hour, uint8_t minute, int8_t temperature, bool render_to_screen = true);
-
 #define NTP_SYNC_FREQUENCY_HOURS 1
 
 ModulinoThermo modulino_thermo;
@@ -54,10 +52,7 @@ bool display_wake_requested = false;
 #include "src/button_handler.h"
 #include "src/display_autobrightness_handler.h"
 #include "src/display_onoff_handler.h"
-
-void onZigbeeTimeUpdated() {
-  zigbee_time_updated = true;
-}
+#include "src/zigbee_handler.h"
 
 void setup() {
   WatchdogTimer.begin(WDOG_PERIOD_16_S);
@@ -165,28 +160,5 @@ void loop() {
   if (task_1min_timer + 60000u < millis_curr) {
     task_1min_timer = millis_curr;
     Serial.printf("Uptime: %s\n", Uptime::getInstance().get_uptime_string().c_str());
-  }
-}
-
-void handle_zigbee_identify() {
-  static bool identification_in_progress_last = false;
-  bool identification_in_progress = zigbee_bulb.get_identify_in_progress();
-  // Handle the identification enable/disable transitions
-  if (identification_in_progress && !identification_in_progress_last) {
-    Serial.println("Identification started");
-  } else if (!identification_in_progress && identification_in_progress_last) {
-    // Set the LED to the current on/off state once the identification ends
-    Serial.println("Identification ended");
-    digitalWrite(LED_BUILTIN_2, LED_BUILTIN_INACTIVE);
-  }
-  identification_in_progress_last = identification_in_progress;
-
-  // Blink the LED while the identification is in progress
-  if (identification_in_progress) {
-    if (millis() % 1000 < 500) {
-      digitalWrite(LED_BUILTIN_2, LED_BUILTIN_INACTIVE);
-    } else {
-      digitalWrite(LED_BUILTIN_2, LED_BUILTIN_ACTIVE);
-    }
   }
 }

@@ -5,9 +5,14 @@ enum ntp_state_e : uint8_t {
   NTP_SYNC_WAIT_RESPONSE
 };
 
+void onZigbeeTimeUpdated();
 void ntpTask();
 void requestNTPSync();
 bool checkTimeSyncStatus();
+
+void onZigbeeTimeUpdated() {
+  zigbee_time_updated = true;
+}
 
 void ntpTask() {
   static ntp_state_e state = NTP_INIT;
