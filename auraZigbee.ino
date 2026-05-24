@@ -472,7 +472,7 @@ void show_detailed_status() {
 
 void draw_loading_screen() {
   static uint8_t wait_cycles = 20u;
-  static const uint8_t anim_x_offset = 15u;
+  static const uint8_t anim_x_offset = 14u;
   static const uint8_t anim_y_offset = 4u;
 
   if(wait_cycles != 0) {
