@@ -12,8 +12,6 @@
 
 #include "src/millis_rtc.h"
 
-#define NTP_SYNC_FREQUENCY_HOURS 1
-
 #define LC_SPI_CS A0
 #define LC_NUMBER_OF_DEVICES 4
 bozontlabsMAX7219 lc = bozontlabsMAX7219(LC_SPI_CS, LC_NUMBER_OF_DEVICES);
@@ -61,7 +59,8 @@ void setup() {
   // Initialize Zigbee
   ZigbeeHandler& zigbee_handler = ZigbeeHandler::getInstance();
   zigbee_handler.begin();
-  zigbee_timesync_begin();
+  TimesyncHandler& timesync_handler = TimesyncHandler::getInstance();
+  timesync_handler.begin();
 
   // Perform initial temperature and humidity measurements
   sensor_handler.modulino_thermo_measure();
@@ -110,7 +109,7 @@ void loop() {
   if (task_100ms_timer + 100u < millis_curr) {
     task_100ms_timer = millis_curr;
     Uptime::getInstance().update();
-    ntpTask();
+    TimesyncHandler::getInstance().task();
     SensorHandler::getInstance().task();
     display_auto_brightness_task(true);
     display_onoff_handler_task();

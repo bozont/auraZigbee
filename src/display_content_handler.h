@@ -26,6 +26,7 @@ void refresh_screen() {
 
   // Draw the loading screen if the clock is not synced yet
   static bool zigbee_time_initial_update_done_prev = false;
+  bool zigbee_time_initial_update_done = TimesyncHandler::getInstance().isInitialTimeUpdateDone();
   if (!zigbee_time_initial_update_done) {
     draw_loading_screen();
     return;
