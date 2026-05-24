@@ -51,12 +51,13 @@ void refresh_screen() {
     }
 
     if (clock_style == CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP) {
+      SensorHandler& sensor_handler = SensorHandler::getInstance();
       static uint8_t min_prev = 61;
       static float temp_prev = -273.0f;
-      if (min != min_prev || modulino_temp != temp_prev) {
+      if (min != min_prev || sensor_handler.get_temperature() != temp_prev) {
         min_prev = min;
-        temp_prev = modulino_temp;
-        draw_small_clock(hour, min, (int8_t)round(modulino_temp));
+        temp_prev = sensor_handler.get_temperature();
+        draw_small_clock(hour, min, (int8_t)round(sensor_handler.get_temperature()));
       }
     }
 
@@ -70,7 +71,7 @@ void refresh_screen() {
   }
 
   if (clock_style == CLOCKSTYLE_PLASMA) {
-    draw_plasma_clock(rtc.get_hour(), rtc.get_minute(), (int8_t)round(modulino_temp));
+    draw_plasma_clock(rtc.get_hour(), rtc.get_minute(), (int8_t)round(SensorHandler::getInstance().get_temperature()));
   }
 
   // Scroll the text if needed - go to the first style when finished
@@ -80,7 +81,7 @@ void refresh_screen() {
       clock_style = CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP;
       uint8_t hour = rtc.get_hour();
       uint8_t min = rtc.get_minute();
-      draw_small_clock(hour, min, (int8_t)round(modulino_temp));
+      draw_small_clock(hour, min, (int8_t)round(SensorHandler::getInstance().get_temperature()));
     } else {
       delay(7);
     }
@@ -244,6 +245,7 @@ void draw_small_clock_with_seconds(uint8_t hour, uint8_t minute, uint8_t seconds
 
 void show_detailed_status() {
   MillisRTC& rtc = MillisRTC::getInstance();
+  SensorHandler& sensor_handler = SensorHandler::getInstance();
   char dest[300];
   size_t size = sizeof(dest);
   snprintf_P(dest,
@@ -256,9 +258,9 @@ void show_detailed_status() {
              rtc.get_day(),
              rtc.get_dayname_str(),
              Uptime::getInstance().get_uptime_string().c_str(),
-             modulino_temp,
-             modulino_humidity,
-             light_level,
+             sensor_handler.get_temperature(),
+             sensor_handler.get_humidity(),
+             sensor_handler.get_light_level(),
              Zigbee.getPanId(),
              Zigbee.getChannel());
   Serial.println(dest);

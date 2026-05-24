@@ -18,9 +18,6 @@
 
 #define NTP_SYNC_FREQUENCY_HOURS 1
 
-ModulinoThermo modulino_thermo;
-LTR381RGBClass modulino_light(Wire, 0x53);
-
 #define LC_SPI_CS A0
 #define LC_NUMBER_OF_DEVICES 4
 bozontlabsMAX7219 lc = bozontlabsMAX7219(LC_SPI_CS, LC_NUMBER_OF_DEVICES);
@@ -52,9 +49,8 @@ void setup() {
   attachInterrupt(BTN_BUILTIN, &handle_button_press, FALLING);
 
   Wire.begin();
-  Modulino.begin();
-  modulino_thermo.begin();
-  modulino_light.begin();
+  SensorHandler& sensor_handler = SensorHandler::getInstance();
+  sensor_handler.begin();
   delay(200);
 
   // Boot the screen
@@ -89,10 +85,9 @@ void setup() {
   zigbee_light_sensor.set_light_sensor_type(ZigbeeLightSensor::LIGHT_SENSOR_TYPE_CMOS);
 
   // Perform initial temperature and humidity measurements
-  modulino_temp = floor(modulino_thermo.getTemperature() * 10) / 10.0 + modulino_temp_calibration;
-  modulino_humidity = floor(modulino_thermo.getHumidity());
-  zigbee_temp_sensor.set_measured_value_celsius(modulino_temp);
-  zigbee_humidity_sensor.set_measured_value_percent(modulino_humidity);
+  sensor_handler.modulino_thermo_measure();
+  zigbee_temp_sensor.set_measured_value_celsius(sensor_handler.get_temperature());
+  zigbee_humidity_sensor.set_measured_value_percent(sensor_handler.get_humidity());
 
   // Wait for the Zigbee network to be joined
   Serial.println("Waiting for Zigbee network...");
@@ -135,12 +130,12 @@ void loop() {
   static uint32_t task_100ms_timer = 0;
   if (task_100ms_timer + 100u < millis_curr) {
     task_100ms_timer = millis_curr;
-    ntpTask();
-    display_auto_brightness_task(true);
-    modulino_thermo_measure();
-    handle_zigbee_identify();
     Uptime::getInstance().update();
+    ntpTask();
+    SensorHandler::getInstance().task();
+    display_auto_brightness_task(true);
     display_onoff_handler_task();
+    handle_zigbee_identify();
   }
 
   static uint32_t task_1min_timer = 0;

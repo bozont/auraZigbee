@@ -10,9 +10,7 @@ void display_auto_brightness_task(bool turn_off_in_darkness) {
   static std::vector<float> light_value_history;
   const uint8_t light_value_history_size = 20u;
 
-  int light_reading = 0;
-  modulino_light.readAmbientLight(light_reading);
-  light_level = (float)light_reading;
+  float light_level = SensorHandler::getInstance().get_light_level();
   if (first_run) {
     for (uint8_t i = 0; i < light_value_history_size; i++) {
       light_value_history.push_back(light_level);

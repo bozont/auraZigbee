@@ -37,7 +37,7 @@ void handle_button_actions() {
     draw_small_clock_with_seconds(hour, min, second);
   }
   if (clock_style == CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP) {
-    draw_small_clock(hour, min, (int8_t)round(modulino_temp));
+    draw_small_clock(hour, min, (int8_t)round(SensorHandler::getInstance().get_temperature()));
   }
   if (clock_style == CLOCKSTYLE_BIG) {
     draw_clock(hour, min);
