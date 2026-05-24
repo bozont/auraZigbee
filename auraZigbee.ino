@@ -111,7 +111,7 @@ void loop() {
     Uptime::getInstance().update();
     TimesyncHandler::getInstance().task();
     SensorHandler::getInstance().task();
-    display_auto_brightness_task(true);
+    DisplayAutobrightnessHandler::getInstance().task();
     display_onoff_handler_task();
     ZigbeeHandler::getInstance().task();
   }

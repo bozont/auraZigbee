@@ -51,6 +51,7 @@ void display_onoff_handler_task() {
   }
   initial_cooldown = false;
 
+  bool display_on_autobrightness = DisplayAutobrightnessHandler::getInstance().get_display_on_autobrightness();
   if (display_on_autobrightness != display_on_autobrightness_prev) {
     display_on_autobrightness_prev = display_on_autobrightness;
     display_wake_timer_running = false;
