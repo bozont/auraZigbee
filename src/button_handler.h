@@ -1,3 +1,5 @@
+volatile bool button_pressed = false;
+
 void handle_button_press() {
   static uint32_t btn_last_press = 0;
   if (millis() < btn_last_press + 200) {

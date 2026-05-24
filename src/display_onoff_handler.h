@@ -1,3 +1,5 @@
+bool display_wake_requested = false;
+
 void display_onoff_handler_task() {
   static bool display_on_zigbee_prev = true;
   bool display_on_zigbee = zigbee_bulb.get_onoff();

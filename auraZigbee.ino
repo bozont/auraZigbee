@@ -21,11 +21,6 @@
 ModulinoThermo modulino_thermo;
 LTR381RGBClass modulino_light(Wire, 0x53);
 
-const float modulino_temp_calibration = -2.0f;
-float modulino_temp = 0.0f;
-float modulino_humidity = 0.0f;
-float light_level = 0.0f;
-
 #define LC_SPI_CS A0
 #define LC_NUMBER_OF_DEVICES 4
 bozontlabsMAX7219 lc = bozontlabsMAX7219(LC_SPI_CS, LC_NUMBER_OF_DEVICES);
@@ -36,23 +31,15 @@ ZigbeeHumiditySensor zigbee_humidity_sensor;
 ZigbeeLightSensor zigbee_light_sensor;
 ZigbeeLightbulb zigbee_bulb;
 
-volatile bool zigbee_time_initial_update_done = false;
-volatile bool zigbee_time_updated = false;
-volatile bool button_pressed = false;
-volatile bool text_scroll_in_progress = false;
-
-bool display_on_autobrightness = true;
-bool display_wake_requested = false;
-
 #include "src/ledmatrix_font.h"
 #include "src/ledmatrix_gfx.h"
 #include "src/timesync_handler.h"
 #include "src/sensor_handler.h"
 #include "src/display_content_handler.h"
-#include "src/button_handler.h"
 #include "src/display_autobrightness_handler.h"
 #include "src/display_onoff_handler.h"
 #include "src/zigbee_handler.h"
+#include "src/button_handler.h"
 
 void setup() {
   WatchdogTimer.begin(WDOG_PERIOD_16_S);

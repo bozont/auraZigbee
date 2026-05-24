@@ -9,6 +9,7 @@ typedef enum {
 } clock_styles_t;
 
 static clock_styles_t clock_style = CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP;
+volatile bool text_scroll_in_progress = false;
 
 void refresh_screen();
 void draw_plasma_clock(uint8_t hour, uint8_t minute, int8_t temperature);

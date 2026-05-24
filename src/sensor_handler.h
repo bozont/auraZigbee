@@ -1,3 +1,8 @@
+const float modulino_temp_calibration = -2.0f;
+float modulino_temp = 0.0f;
+float modulino_humidity = 0.0f;
+float light_level = 0.0f;
+
 void modulino_thermo_measure() {
   static uint32_t last_action_temp = 0;
   if ((last_action_temp + 5000) < millis()) {

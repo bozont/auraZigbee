@@ -1,3 +1,5 @@
+bool display_on_autobrightness = true;
+
 void display_auto_brightness_task(bool turn_off_in_darkness) {
   const uint32_t turn_off_threshold_lx = 1.0f;
   const uint32_t turn_on_threshold_lx = 2.0f;
