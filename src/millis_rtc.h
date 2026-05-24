@@ -106,10 +106,12 @@ public:
 
     // Remove whole months
     for (uint8_t month = 0; month < 12; month++) {
-      uint8_t dim = days_in_month[month];
-      if (month == 1 && this->is_leap_year(year)) dim++; // February leap
-
-      uint32_t month_seconds = dim * 86400UL;
+      uint8_t current_month_days = days_in_month[month];
+      // Handle February leap
+      if (month == 1 && this->is_leap_year(year)) {
+        current_month_days++;
+      }
+      uint32_t month_seconds = current_month_days * SECONDS_IN_A_DAY;
       if (seconds < month_seconds) {
         return month + 1; // 1–12
       }
@@ -145,9 +147,9 @@ public:
       uint8_t dim = days_in_month[month];
       if (month == 1 && this->is_leap_year(year)) dim++;
 
-      uint32_t month_seconds = dim * 86400UL;
+      uint32_t month_seconds = dim * SECONDS_IN_A_DAY;
       if (seconds < month_seconds) {
-        return (seconds / 86400UL) + 1; // 1–31
+        return (seconds / SECONDS_IN_A_DAY) + 1; // 1–31
       }
       seconds -= month_seconds;
     }
@@ -158,7 +160,7 @@ public:
   // Returns the current day of the week (0–6, where 0 = Sunday, 1 = Monday, ..., 6 = Saturday)
   uint8_t get_dayname(void) {
     // 1970-01-01 was a Thursday (4)
-    return (uint8_t)((this->device_rtc_clock / 86400UL + 4) % 7);
+    return (uint8_t)((this->device_rtc_clock / SECONDS_IN_A_DAY + 4) % 7);
   }
 
   // Returns the current day of the week as a string
@@ -183,6 +185,10 @@ public:
   }
 
 private:
+  static const uint32_t SECONDS_IN_A_DAY = 86400UL;
+  static const uint32_t SECONDS_IN_A_YEAR = 31536000UL;
+  static const uint32_t SECONDS_IN_A_LEAP_YEAR = 31622400UL;
+
   uint32_t device_rtc_clock;
   uint32_t last_millis;
 
@@ -194,6 +200,6 @@ private:
   MillisRTC& operator=(const MillisRTC&) = delete;
 
   uint32_t get_seconds_in_year(uint16_t year) {
-    return this->is_leap_year(year) ? 31622400UL : 31536000UL;
+    return this->is_leap_year(year) ? SECONDS_IN_A_LEAP_YEAR : SECONDS_IN_A_YEAR;
   }
 };
