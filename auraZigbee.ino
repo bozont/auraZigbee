@@ -7,10 +7,6 @@
 #include <vector>
 
 #include <Zigbee.h>
-#include <ZigbeeHumiditySensor.h>
-#include <ZigbeeLightSensor.h>
-#include <ZigbeeLightbulb.h>
-#include <ZigbeeTemperatureSensor.h>
 #include <ZigbeeTimeClient.h>
 #include <time.h>
 
@@ -22,20 +18,14 @@
 #define LC_NUMBER_OF_DEVICES 4
 bozontlabsMAX7219 lc = bozontlabsMAX7219(LC_SPI_CS, LC_NUMBER_OF_DEVICES);
 
-ZigbeeTimeClient zigbee_time;
-ZigbeeTemperatureSensor zigbee_temp_sensor;
-ZigbeeHumiditySensor zigbee_humidity_sensor;
-ZigbeeLightSensor zigbee_light_sensor;
-ZigbeeLightbulb zigbee_bulb;
-
 #include "src/ledmatrix_font.h"
 #include "src/ledmatrix_gfx.h"
 #include "src/timesync_handler.h"
 #include "src/sensor_handler.h"
 #include "src/display_content_handler.h"
 #include "src/display_autobrightness_handler.h"
-#include "src/display_onoff_handler.h"
 #include "src/zigbee_handler.h"
+#include "src/display_onoff_handler.h"
 #include "src/button_handler.h"
 
 void setup() {
@@ -69,25 +59,14 @@ void setup() {
   delay(500);
 
   // Initialize Zigbee
-  Zigbee.setVendorName("Bozont Labs Inc.");
-  Zigbee.setProductName("auraZigbee");
-  Zigbee.setFirmwareVersion(0x00000420);
-  zigbee_time.setTimeUpdateCallback(onZigbeeTimeUpdated);
-  Zigbee.begin();
-  zigbee_bulb.begin();
-  zigbee_bulb.set_onoff(true);
-  zigbee_time.begin();
-  zigbee_temp_sensor.begin();
-  zigbee_humidity_sensor.begin();
-  zigbee_light_sensor.begin();
-  zigbee_light_sensor.set_min_value_lux(0.0f);
-  zigbee_light_sensor.set_max_value_lux(100000.0f);
-  zigbee_light_sensor.set_light_sensor_type(ZigbeeLightSensor::LIGHT_SENSOR_TYPE_CMOS);
+  ZigbeeHandler& zigbee_handler = ZigbeeHandler::getInstance();
+  zigbee_handler.begin();
+  zigbee_timesync_begin();
 
   // Perform initial temperature and humidity measurements
   sensor_handler.modulino_thermo_measure();
-  zigbee_temp_sensor.set_measured_value_celsius(sensor_handler.get_temperature());
-  zigbee_humidity_sensor.set_measured_value_percent(sensor_handler.get_humidity());
+  sensor_handler.modulino_light_measure();
+  zigbee_handler.update_sensors();
 
   // Wait for the Zigbee network to be joined
   Serial.println("Waiting for Zigbee network...");
@@ -135,7 +114,7 @@ void loop() {
     SensorHandler::getInstance().task();
     display_auto_brightness_task(true);
     display_onoff_handler_task();
-    handle_zigbee_identify();
+    ZigbeeHandler::getInstance().task();
   }
 
   static uint32_t task_1min_timer = 0;

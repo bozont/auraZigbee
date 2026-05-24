@@ -5,6 +5,8 @@ enum ntp_state_e : uint8_t {
   NTP_SYNC_WAIT_RESPONSE
 };
 
+ZigbeeTimeClient zigbee_time;
+
 volatile bool zigbee_time_initial_update_done = false;
 volatile bool zigbee_time_updated = false;
 
@@ -15,6 +17,11 @@ bool checkTimeSyncStatus();
 
 void onZigbeeTimeUpdated() {
   zigbee_time_updated = true;
+}
+
+void zigbee_timesync_begin() {
+  zigbee_time.setTimeUpdateCallback(onZigbeeTimeUpdated);
+  zigbee_time.begin();
 }
 
 void ntpTask() {

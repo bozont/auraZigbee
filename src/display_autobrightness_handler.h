@@ -58,12 +58,4 @@ void display_auto_brightness_task(bool turn_off_in_darkness) {
     lc.setBrightness(display_brightness);
     display_brightness_prev = display_brightness;
   }
-
-  // Update the Zigbee light sensor with the rolling average value every 5 seconds
-  uint32_t millis_curr = millis();
-  static uint32_t zigbee_light_last_update = 0;
-  if (zigbee_light_last_update + 5000u < millis_curr) {
-    zigbee_light_last_update = millis_curr;
-    zigbee_light_sensor.set_measured_value_lux(light_value_rolling_avg);
-  }
 }

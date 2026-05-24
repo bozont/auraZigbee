@@ -34,13 +34,11 @@ public:
 
     if (modulino_temp_new != modulino_temp) {
       modulino_temp = modulino_temp_new;
-      zigbee_temp_sensor.set_measured_value_celsius(modulino_temp);
       Serial.printf("Temperature: %.1f C\n", modulino_temp);
     }
 
     if (modulino_humidity_new != modulino_humidity) {
       modulino_humidity = modulino_humidity_new;
-      zigbee_humidity_sensor.set_measured_value_percent(modulino_humidity);
       Serial.printf("Humidity: %.1f%%\n", modulino_humidity);
     }
   }
