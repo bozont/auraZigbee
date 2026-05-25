@@ -43,6 +43,9 @@ void setup() {
   DisplayHandler& display_handler = DisplayHandler::getInstance();
   display_handler.begin();
   Serial.println("Display initialized");
+  // Set the initial brightness
+  sensor_handler.modulino_light_measure();
+  DisplayAutobrightnessHandler::getInstance().task();
   delay(500);
 
   // Initialize Zigbee
