@@ -37,10 +37,10 @@ public:
         Serial.printf("No time sync response received; checking again in %d seconds...\n", SYNC_RECHECK_TIME_SEC);
         no_response_cnt++;
         if (no_response_cnt >= 5u) {
+          Serial.printf("No time sync response received in %u checks; requesting sync again...\n", no_response_cnt);
           no_response_cnt = 0u;
           state = ZBTS_SYNC_IN_PROGRESS;
           this->requestZigbeeTimeSync();
-          Serial.printf("No time sync response received %u times; requesting sync again...\n", no_response_cnt);
         }
       }
     } break;

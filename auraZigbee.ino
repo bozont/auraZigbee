@@ -80,12 +80,12 @@ void setup() {
 
 void loop() {
   WatchdogTimer.feed();
+  DisplayHandler::getInstance().task();
 
   uint32_t millis_curr = millis();
   static uint32_t task_2ms_timer = 0;
   if (task_2ms_timer + 2u < millis_curr) {
     task_2ms_timer = millis_curr;
-    DisplayHandler::getInstance().task();
     MillisRTC::getInstance().update();
     ButtonHandler::getInstance().task();
   }

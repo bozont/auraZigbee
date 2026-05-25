@@ -21,8 +21,17 @@ public:
   }
 
   void task() {
-    this->refresh_screen();
-    this->display_onoff_handler();
+    static uint32_t last_action_refresh = 0;
+    if ((last_action_refresh + this->screen_refresh_delay) <= millis()) {
+      last_action_refresh = millis();
+      this->refresh_screen();
+    }
+
+    static uint32_t last_action_onoff = 0;
+    if ((last_action_onoff + 200) < millis()) {
+      last_action_onoff = millis();
+      this->display_onoff_handler();
+    }
   }
 
   void request_next_clock_style() {
@@ -35,15 +44,23 @@ public:
     uint8_t min = rtc.get_minute();
     uint8_t second = rtc.get_second();
     if (this->clock_style == CLOCKSTYLE_SMALL_WITH_SECONDS) {
+      this->screen_refresh_delay = 5;
       draw_small_clock_with_seconds(hour, min, second);
     }
     if (this->clock_style == CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP) {
+      this->screen_refresh_delay = 50;
       draw_small_clock(hour, min, (int8_t)round(SensorHandler::getInstance().get_temperature()));
     }
     if (this->clock_style == CLOCKSTYLE_BIG) {
+      this->screen_refresh_delay = 50;
       draw_clock(hour, min);
     }
+    if (clock_style == CLOCKSTYLE_PLASMA) {
+      this->screen_refresh_delay = 0;
+      draw_plasma_clock(hour, min, (int8_t)round(SensorHandler::getInstance().get_temperature()));
+    }
     if (this->clock_style == CLOCKSTYLE_DETAILED_STATUS) {
+      this->screen_refresh_delay = 1;
       show_detailed_status();
     }
     Serial.print("Clock style: ");
@@ -67,12 +84,14 @@ public:
     static bool zigbee_time_initial_update_done_prev = false;
     bool zigbee_time_initial_update_done = TimesyncHandler::getInstance().isInitialTimeUpdateDone();
     if (!zigbee_time_initial_update_done) {
+      this->screen_refresh_delay = 2;
       draw_loading_screen();
       return;
     }
     // Clear the screen after the loading animation
     if (zigbee_time_initial_update_done != zigbee_time_initial_update_done_prev) {
       zigbee_time_initial_update_done_prev = zigbee_time_initial_update_done;
+      this->screen_refresh_delay = 5;
       clear_framebuffer();
       render_framebuffer_to_screen();
     }
@@ -244,6 +263,7 @@ private:
   clock_styles_t clock_style;
   bool text_scroll_in_progress;
   bool display_wake_requested;
+  uint32_t screen_refresh_delay;
 
   void draw_plasma_clock(uint8_t hour, uint8_t minute, int8_t temperature) {
     uint32_t millis_curr = millis();
@@ -287,6 +307,7 @@ private:
     dirY += (targetDirY - dirY) * smoothing;
 
     // Generate next frame
+    uint32_t plasma_pixels = 0u;
     for (int x = 0; x < WIDTH; x++) {
       for (int y = 0; y < HEIGHT; y++) {
         float value = sin(x * 0.15f * dirX + t) + sin(y * 0.3f * dirY + t * 1.3f) + sin((x + y) * 0.08f + t * 0.7f);
@@ -296,11 +317,18 @@ private:
           setxy_framebuffer(x, y, !pixel);
         } else {
           setxy_framebuffer(x, y, pixel);
+          if(pixel) plasma_pixels++;
         }
       }
     }
 
     t += speed;
+    // If there are no visible plasma pixels and the time variable is over 20*pi,
+    // set the time variable back by 20*pi to prevent expensive sin calculations slowing down the animation
+    if ((plasma_pixels == 0) && (t > (TWO_PI * 10.0f))) {
+        t -= (TWO_PI * 10.0f);
+    }
+
     render_framebuffer_to_screen();
   }
 
@@ -428,7 +456,8 @@ private:
   DisplayHandler()
       : clock_style(CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP)
       , text_scroll_in_progress(false)
-      , display_wake_requested(false) {}
+      , display_wake_requested(false)
+      , screen_refresh_delay(10) {}
 
   DisplayHandler(const DisplayHandler&) = delete;
   DisplayHandler& operator=(const DisplayHandler&) = delete;
