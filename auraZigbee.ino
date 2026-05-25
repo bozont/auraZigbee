@@ -29,6 +29,7 @@ void setup() {
   WatchdogTimer.feed();
   Serial.begin(115200);
   Serial.println("auraSmartClock Zigbee Edition (tm)");
+  Serial.println("Build date: " __DATE__ " " __TIME__);
   pinMode(LED_BUILTIN_2, OUTPUT);
   digitalWrite(LED_BUILTIN_2, LED_BUILTIN_INACTIVE);
   ButtonHandler::getInstance().begin();
