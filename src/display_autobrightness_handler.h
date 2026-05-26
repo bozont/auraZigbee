@@ -67,7 +67,7 @@ public:
                     light_level,
                     light_value_rolling_avg,
                     display_brightness);
-      lc.setBrightness(display_brightness);
+      lm.setBrightness(display_brightness);
       display_brightness_prev = display_brightness;
     }
   }

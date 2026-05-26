@@ -40,7 +40,7 @@ public:
     display_handler.stop_text_scroll();
 
     // Request a display wake is it's off
-    if (!lc.getDisplayOn()) {
+    if (!lm.getDisplayOn()) {
       display_handler.request_display_wake();
       return;
     }

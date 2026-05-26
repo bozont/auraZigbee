@@ -12,7 +12,7 @@
 
 #define LC_SPI_CS A0
 #define LC_NUMBER_OF_DEVICES 4
-bozontlabsMAX7219 lc = bozontlabsMAX7219(LC_SPI_CS, LC_NUMBER_OF_DEVICES);
+bozontlabsMAX7219 lm = bozontlabsMAX7219(LC_SPI_CS, LC_NUMBER_OF_DEVICES);
 
 #include "src/millis_rtc.h"
 #include "src/ledmatrix_font.h"
@@ -41,6 +41,12 @@ void setup() {
 
   // Boot the screen
   Serial.println("Initializing display...");
+  lm.begin();
+  lm.setDisplayOn(true);
+  lm.setBrightness(0);
+  lm.clearDisplay();
+  LedmatrixGFX& ledmatrix_gfx = LedmatrixGFX::getInstance();
+  ledmatrix_gfx.begin();
   DisplayHandler& display_handler = DisplayHandler::getInstance();
   display_handler.begin();
   Serial.println("Display initialized");
@@ -64,9 +70,9 @@ void setup() {
   Serial.println("Waiting for Zigbee network...");
   if (!Zigbee.isJoinedToNetwork()) {
     digitalWrite(LED_BUILTIN_2, LED_BUILTIN_ACTIVE);
-    clear_framebuffer();
-    draw_num(0, 0, LEDMATRIX_ICON_WIFI);
-    render_framebuffer_to_screen();
+    ledmatrix_gfx.clear_framebuffer();
+    ledmatrix_gfx.draw_num(0, 0, LEDMATRIX_ICON_WIFI);
+    ledmatrix_gfx.render_framebuffer_to_screen();
   }
   while (!Zigbee.isJoinedToNetwork()) {
     DisplayHandler::getInstance().draw_loading_screen();
@@ -78,8 +84,8 @@ void setup() {
 
   WatchdogTimer.feed();
 
-  clear_framebuffer();
-  render_framebuffer_to_screen();
+  ledmatrix_gfx.clear_framebuffer();
+  ledmatrix_gfx.render_framebuffer_to_screen();
 }
 
 void loop() {

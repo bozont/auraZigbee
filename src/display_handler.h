@@ -8,16 +8,8 @@ public:
   }
 
   void begin() {
-    lc.begin();
-    lc.setDisplayOn(true);
-    lc.setBrightness(0);
-    lc.clearDisplay();
-    memset(text_to_show_data, 0u, sizeof(text_to_show_data));
-    memset(ledmatrix_framebuffer, false, LEDMATRIX_WIDTH * LEDMATRIX_HEIGHT);
-    memset(ledmatrix_framebuffer_onscreen, false, (LEDMATRIX_WIDTH * LEDMATRIX_HEIGHT));
-    ledmatrix_ascii_table_init();
-    render_text_to_framebuffer("hello", 0, 0);
-    render_framebuffer_to_screen();
+    ledmatrix_gfx.render_text_to_framebuffer("hello", 0, 0);
+    ledmatrix_gfx.render_framebuffer_to_screen();
   }
 
   void task() {
@@ -76,7 +68,7 @@ public:
   }
 
   void refresh_screen() {
-    if (!lc.getDisplayOn()) {
+    if (!lm.getDisplayOn()) {
       return;
     }
 
@@ -92,8 +84,8 @@ public:
     if (zigbee_time_initial_update_done != zigbee_time_initial_update_done_prev) {
       zigbee_time_initial_update_done_prev = zigbee_time_initial_update_done;
       this->screen_refresh_delay = 5;
-      clear_framebuffer();
-      render_framebuffer_to_screen();
+      ledmatrix_gfx.clear_framebuffer();
+      ledmatrix_gfx.render_framebuffer_to_screen();
     }
 
     MillisRTC& rtc = MillisRTC::getInstance();
@@ -135,7 +127,7 @@ public:
 
     // Scroll the text if needed - go to the first style when finished
     if (clock_style == CLOCKSTYLE_DETAILED_STATUS) {
-      if (!scroll_text()) {
+      if (!ledmatrix_gfx.scroll_text()) {
         text_scroll_in_progress = false;
         clock_style = CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP;
         uint8_t hour = rtc.get_hour();
@@ -158,10 +150,10 @@ public:
     if (display_wake_requested) {
       display_wake_requested = false;
       // If the display is already on we don't need to do anything
-      if (lc.getDisplayOn()) {
+      if (lm.getDisplayOn()) {
         return;
       }
-      lc.setDisplayOn(true);
+      lm.setDisplayOn(true);
       zigbee_bulb.set_onoff(true);
       display_on_zigbee_prev = true;
       Serial.println("Screen ON (Button)");
@@ -173,7 +165,7 @@ public:
     if (display_wake_timer_running && ((millis() - display_wake_start) > 10000u)) {
       Serial.println("Screen OFF (Wake timer)");
       display_wake_timer_running = false;
-      lc.setDisplayOn(false);
+      lm.setDisplayOn(false);
       zigbee_bulb.set_onoff(false);
       display_on_zigbee_prev = false;
       return;
@@ -182,7 +174,7 @@ public:
     if (display_on_zigbee != display_on_zigbee_prev) {
       display_on_zigbee_prev = display_on_zigbee;
       display_wake_timer_running = false;
-      lc.setDisplayOn(display_on_zigbee);
+      lm.setDisplayOn(display_on_zigbee);
       if (display_on_zigbee) {
         Serial.println("Screen ON (Zigbee)");
       } else {
@@ -202,7 +194,7 @@ public:
     if (display_on_autobrightness != display_on_autobrightness_prev) {
       display_on_autobrightness_prev = display_on_autobrightness;
       display_wake_timer_running = false;
-      lc.setDisplayOn(display_on_autobrightness);
+      lm.setDisplayOn(display_on_autobrightness);
       if (display_on_autobrightness) {
         Serial.println("Screen ON (Autobrightness)");
       } else {
@@ -242,11 +234,11 @@ public:
     anim_cnt++;
     if (anim_cnt == 8) anim_cnt = 0;
 
-    setxy_framebuffer(anim_x_offset, anim_y_offset, led_states[0]);
-    setxy_framebuffer(anim_x_offset + 1, anim_y_offset, led_states[1]);
-    setxy_framebuffer(anim_x_offset + 2, anim_y_offset, led_states[2]);
-    setxy_framebuffer(anim_x_offset + 3, anim_y_offset, led_states[3]);
-    render_framebuffer_to_screen();
+    ledmatrix_gfx.setxy_framebuffer(anim_x_offset, anim_y_offset, led_states[0]);
+    ledmatrix_gfx.setxy_framebuffer(anim_x_offset + 1, anim_y_offset, led_states[1]);
+    ledmatrix_gfx.setxy_framebuffer(anim_x_offset + 2, anim_y_offset, led_states[2]);
+    ledmatrix_gfx.setxy_framebuffer(anim_x_offset + 3, anim_y_offset, led_states[3]);
+    ledmatrix_gfx.render_framebuffer_to_screen();
   }
 
 private:
@@ -313,11 +305,11 @@ private:
         float value = sin(x * 0.15f * dirX + t) + sin(y * 0.3f * dirY + t * 1.3f) + sin((x + y) * 0.08f + t * 0.7f);
         bool pixel = (value > 0.3f); // lower threshold = bigger blobs
         // If there's already a pixel of the clock underneath - invert the pixel so the clock stays visible
-        if (getxy_framebuffer(x, y)) {
-          setxy_framebuffer(x, y, !pixel);
+        if (ledmatrix_gfx.getxy_framebuffer(x, y)) {
+          ledmatrix_gfx.setxy_framebuffer(x, y, !pixel);
         } else {
-          setxy_framebuffer(x, y, pixel);
-          if(pixel) plasma_pixels++;
+          ledmatrix_gfx.setxy_framebuffer(x, y, pixel);
+          if (pixel) plasma_pixels++;
         }
       }
     }
@@ -326,10 +318,10 @@ private:
     // If there are no visible plasma pixels and the time variable is over 20*pi,
     // set the time variable back by 20*pi to prevent expensive sin calculations slowing down the animation
     if ((plasma_pixels == 0) && (t > (TWO_PI * 10.0f))) {
-        t -= (TWO_PI * 10.0f);
+      t -= (TWO_PI * 10.0f);
     }
 
-    render_framebuffer_to_screen();
+    ledmatrix_gfx.render_framebuffer_to_screen();
   }
 
   void draw_clock(uint8_t hour, uint8_t minute) {
@@ -339,15 +331,15 @@ private:
     uint8_t minute_ones = minute % 10;
 
     uint8_t display_x_offset = 3u;
-    clear_framebuffer();
+    ledmatrix_gfx.clear_framebuffer();
     if (hour_tens > 0) {
-      draw_num(display_x_offset, 0, hour_tens);
+      ledmatrix_gfx.draw_num(display_x_offset, 0, hour_tens);
     }
-    draw_num(display_x_offset + 6, 0, hour_ones);
-    draw_num(display_x_offset + 11, 0, LEDMATRIX_ICON_COLON);
-    draw_num(display_x_offset + 14, 0, minute_tens);
-    draw_num(display_x_offset + 20, 0, minute_ones);
-    render_framebuffer_to_screen();
+    ledmatrix_gfx.draw_num(display_x_offset + 6, 0, hour_ones);
+    ledmatrix_gfx.draw_num(display_x_offset + 11, 0, LEDMATRIX_ICON_COLON);
+    ledmatrix_gfx.draw_num(display_x_offset + 14, 0, minute_tens);
+    ledmatrix_gfx.draw_num(display_x_offset + 20, 0, minute_ones);
+    ledmatrix_gfx.render_framebuffer_to_screen();
   }
 
   void draw_small_clock(uint8_t hour, uint8_t minute, int8_t temperature, bool render_to_screen = true) {
@@ -359,18 +351,18 @@ private:
     uint8_t display_x_offset = 1u;
     uint8_t display_y_offset = 2u;
 
-    clear_framebuffer();
+    ledmatrix_gfx.clear_framebuffer();
     if (hour_tens > 0) {
-      draw_small_num(display_x_offset, display_y_offset, hour_tens);
+      ledmatrix_gfx.draw_small_num(display_x_offset, display_y_offset, hour_tens);
     }
-    draw_small_num(display_x_offset + 4, display_y_offset, hour_ones);
-    draw_small_num(display_x_offset + 7, display_y_offset, LEDMATRIX_SMALL_ICON_COLON);
-    draw_small_num(display_x_offset + 10, display_y_offset, minute_tens);
-    draw_small_num(display_x_offset + 14, display_y_offset, minute_ones);
+    ledmatrix_gfx.draw_small_num(display_x_offset + 4, display_y_offset, hour_ones);
+    ledmatrix_gfx.draw_small_num(display_x_offset + 7, display_y_offset, LEDMATRIX_SMALL_ICON_COLON);
+    ledmatrix_gfx.draw_small_num(display_x_offset + 10, display_y_offset, minute_tens);
+    ledmatrix_gfx.draw_small_num(display_x_offset + 14, display_y_offset, minute_ones);
 
     if (temperature == -127) {
-      draw_small_num(23, display_y_offset, LEDMATRIX_SMALL_ICON_DASH);
-      draw_small_num(27, display_y_offset, LEDMATRIX_SMALL_ICON_DASH);
+      ledmatrix_gfx.draw_small_num(23, display_y_offset, LEDMATRIX_SMALL_ICON_DASH);
+      ledmatrix_gfx.draw_small_num(27, display_y_offset, LEDMATRIX_SMALL_ICON_DASH);
       return;
     }
 
@@ -384,23 +376,23 @@ private:
     uint8_t temperature_ones = temperature % 10;
 
     if (temperature_tens > 0) {
-      draw_small_num(23, display_y_offset, temperature_tens);
-      draw_small_num(27, display_y_offset, temperature_ones);
-      draw_small_num(30, display_y_offset, LEDMATRIX_SMALL_ICON_CELSIUS);
+      ledmatrix_gfx.draw_small_num(23, display_y_offset, temperature_tens);
+      ledmatrix_gfx.draw_small_num(27, display_y_offset, temperature_ones);
+      ledmatrix_gfx.draw_small_num(30, display_y_offset, LEDMATRIX_SMALL_ICON_CELSIUS);
       if (temp_is_negative) {
-        setxy_framebuffer(20, 4, true);
-        setxy_framebuffer(21, 4, true);
+        ledmatrix_gfx.setxy_framebuffer(20, 4, true);
+        ledmatrix_gfx.setxy_framebuffer(21, 4, true);
       }
     } else {
-      draw_small_num(27, display_y_offset, temperature_ones);
-      draw_small_num(30, display_y_offset, LEDMATRIX_SMALL_ICON_CELSIUS);
+      ledmatrix_gfx.draw_small_num(27, display_y_offset, temperature_ones);
+      ledmatrix_gfx.draw_small_num(30, display_y_offset, LEDMATRIX_SMALL_ICON_CELSIUS);
       if (temp_is_negative) {
-        setxy_framebuffer(24, 4, true);
-        setxy_framebuffer(25, 4, true);
+        ledmatrix_gfx.setxy_framebuffer(24, 4, true);
+        ledmatrix_gfx.setxy_framebuffer(25, 4, true);
       }
     }
 
-    if (render_to_screen) render_framebuffer_to_screen();
+    if (render_to_screen) ledmatrix_gfx.render_framebuffer_to_screen();
   }
 
   void draw_small_clock_with_seconds(uint8_t hour, uint8_t minute, uint8_t seconds) {
@@ -414,18 +406,18 @@ private:
     uint8_t display_x_offset = 2u;
     uint8_t display_y_offset = 2u;
 
-    clear_framebuffer();
+    ledmatrix_gfx.clear_framebuffer();
     if (hour_tens > 0) {
-      draw_small_num(display_x_offset, display_y_offset, hour_tens);
+      ledmatrix_gfx.draw_small_num(display_x_offset, display_y_offset, hour_tens);
     }
-    draw_small_num(display_x_offset + 4, display_y_offset, hour_ones);
-    draw_small_num(display_x_offset + 7, display_y_offset, LEDMATRIX_SMALL_ICON_COLON);
-    draw_small_num(display_x_offset + 10, display_y_offset, minute_tens);
-    draw_small_num(display_x_offset + 14, display_y_offset, minute_ones);
-    draw_small_num(display_x_offset + 17, display_y_offset, LEDMATRIX_SMALL_ICON_COLON);
-    draw_small_num(display_x_offset + 20, display_y_offset, second_tens);
-    draw_small_num(display_x_offset + 24, display_y_offset, second_ones);
-    render_framebuffer_to_screen();
+    ledmatrix_gfx.draw_small_num(display_x_offset + 4, display_y_offset, hour_ones);
+    ledmatrix_gfx.draw_small_num(display_x_offset + 7, display_y_offset, LEDMATRIX_SMALL_ICON_COLON);
+    ledmatrix_gfx.draw_small_num(display_x_offset + 10, display_y_offset, minute_tens);
+    ledmatrix_gfx.draw_small_num(display_x_offset + 14, display_y_offset, minute_ones);
+    ledmatrix_gfx.draw_small_num(display_x_offset + 17, display_y_offset, LEDMATRIX_SMALL_ICON_COLON);
+    ledmatrix_gfx.draw_small_num(display_x_offset + 20, display_y_offset, second_tens);
+    ledmatrix_gfx.draw_small_num(display_x_offset + 24, display_y_offset, second_ones);
+    ledmatrix_gfx.render_framebuffer_to_screen();
   }
 
   void show_detailed_status() {
@@ -449,7 +441,7 @@ private:
                Zigbee.getPanId(),
                Zigbee.getChannel());
     Serial.println(dest);
-    setup_text_scroll((String)dest);
+    ledmatrix_gfx.setup_text_scroll((String)dest);
     text_scroll_in_progress = true;
   }
 
@@ -457,7 +449,10 @@ private:
       : clock_style(CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP)
       , text_scroll_in_progress(false)
       , display_wake_requested(false)
-      , screen_refresh_delay(10) {}
+      , screen_refresh_delay(10)
+      , ledmatrix_gfx(LedmatrixGFX::getInstance()) {}
+
+  LedmatrixGFX& ledmatrix_gfx;
 
   DisplayHandler(const DisplayHandler&) = delete;
   DisplayHandler& operator=(const DisplayHandler&) = delete;
