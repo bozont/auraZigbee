@@ -67,6 +67,10 @@ public:
     }
   }
 
+  bool get_identify_in_progress() {
+    return zigbee_bulb.get_identify_in_progress();
+  }
+
 private:
   void handle_identify() {
     static bool identification_in_progress_last = false;

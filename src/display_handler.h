@@ -28,7 +28,7 @@ public:
 
   void request_next_clock_style() {
     this->clock_style = (clock_styles_t)((int)this->clock_style + 1);
-    if (this->clock_style >= CLOCKSTYLE_MAX) {
+    if (this->clock_style >= CLOCKSTYLE_USER_MAX) {
       this->clock_style = (clock_styles_t)0;
     }
     MillisRTC& rtc = MillisRTC::getInstance();
@@ -86,6 +86,23 @@ public:
       this->screen_refresh_delay = 5;
       ledmatrix_gfx.clear_framebuffer();
       ledmatrix_gfx.render_framebuffer_to_screen();
+    }
+
+    static bool zigbee_identify_in_progress_prev = false;
+    bool zigbee_identify_in_progress = ZigbeeHandler::getInstance().get_identify_in_progress();
+    if (zigbee_identify_in_progress && !zigbee_identify_in_progress_prev) {
+      zigbee_identify_in_progress_prev = zigbee_identify_in_progress;
+      ledmatrix_gfx.setup_text_scroll("I identify myself as a Zigbee clock. Look at me! Look at meee!");
+      text_scroll_in_progress = true;
+      this->screen_refresh_delay = 1;
+    }
+    if (zigbee_identify_in_progress) {
+      if (!ledmatrix_gfx.scroll_text()) {
+        text_scroll_in_progress = false;
+      } else {
+        delay(7);
+      }
+      return;
     }
 
     MillisRTC& rtc = MillisRTC::getInstance();
@@ -248,8 +265,9 @@ private:
     CLOCKSTYLE_PLASMA,
     CLOCKSTYLE_BIG,
     CLOCKSTYLE_DETAILED_STATUS,
-    CLOCKSTYLE_MAX,
-    CLOCKSTYLE_LOADING
+    CLOCKSTYLE_USER_MAX,
+    CLOCKSTYLE_LOADING,
+    CLOCKSTYLE_ZIGBEE_IDENTIFY,
   } clock_styles_t;
 
   clock_styles_t clock_style;

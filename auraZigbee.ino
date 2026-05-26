@@ -100,18 +100,16 @@ void loop() {
     ButtonHandler::getInstance().task();
   }
 
-  if (DisplayHandler::getInstance().get_text_scroll_in_progress()) {
-    return;
-  }
-
   static uint32_t task_100ms_timer = 0;
   if (task_100ms_timer + 100u < millis_curr) {
     task_100ms_timer = millis_curr;
     Uptime::getInstance().update();
-    TimesyncHandler::getInstance().task();
-    SensorHandler::getInstance().task();
-    DisplayAutobrightnessHandler::getInstance().task();
     ZigbeeHandler::getInstance().task();
+    if (!DisplayHandler::getInstance().get_text_scroll_in_progress()) {
+      TimesyncHandler::getInstance().task();
+      SensorHandler::getInstance().task();
+      DisplayAutobrightnessHandler::getInstance().task();
+    }
   }
 
   static uint32_t task_1min_timer = 0;
