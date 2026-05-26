@@ -2,6 +2,17 @@
 
 class DisplayHandler {
 public:
+  typedef enum {
+    CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP = 0,
+    CLOCKSTYLE_SMALL_WITH_SECONDS,
+    CLOCKSTYLE_PLASMA,
+    CLOCKSTYLE_BIG,
+    CLOCKSTYLE_DETAILED_STATUS,
+    CLOCKSTYLE_USER_MAX,
+    CLOCKSTYLE_LOADING,
+    CLOCKSTYLE_ZIGBEE_IDENTIFY,
+  } clock_styles_t;
+
   static DisplayHandler& getInstance() {
     static DisplayHandler instance;
     return instance;
@@ -31,32 +42,16 @@ public:
     if (this->clock_style >= CLOCKSTYLE_USER_MAX) {
       this->clock_style = (clock_styles_t)0;
     }
-    MillisRTC& rtc = MillisRTC::getInstance();
-    uint8_t hour = rtc.get_hour();
-    uint8_t min = rtc.get_minute();
-    uint8_t second = rtc.get_second();
-    if (this->clock_style == CLOCKSTYLE_SMALL_WITH_SECONDS) {
-      this->screen_refresh_delay = 5;
-      draw_small_clock_with_seconds(hour, min, second);
-    }
-    if (this->clock_style == CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP) {
-      this->screen_refresh_delay = 50;
-      draw_small_clock(hour, min, (int8_t)round(SensorHandler::getInstance().get_temperature()));
-    }
-    if (this->clock_style == CLOCKSTYLE_BIG) {
-      this->screen_refresh_delay = 50;
-      draw_clock(hour, min);
-    }
-    if (clock_style == CLOCKSTYLE_PLASMA) {
-      this->screen_refresh_delay = 0;
-      draw_plasma_clock(hour, min, (int8_t)round(SensorHandler::getInstance().get_temperature()));
-    }
-    if (this->clock_style == CLOCKSTYLE_DETAILED_STATUS) {
-      this->screen_refresh_delay = 1;
-      show_detailed_status();
-    }
     Serial.print("Clock style: ");
     Serial.println(this->clock_style);
+    return;
+  }
+
+  void request_clock_style(clock_styles_t clock_style) {
+    this->clock_style = clock_style;
+    if (clock_style == CLOCKSTYLE_USER_MAX) {
+      this->clock_style = (clock_styles_t)0;
+    }
   }
 
   bool get_text_scroll_in_progress() {
@@ -72,87 +67,143 @@ public:
       return;
     }
 
-    // Draw the loading screen if the clock is not synced yet
-    static bool zigbee_time_initial_update_done_prev = false;
-    bool zigbee_time_initial_update_done = TimesyncHandler::getInstance().isInitialTimeUpdateDone();
-    if (!zigbee_time_initial_update_done) {
-      this->screen_refresh_delay = 2;
-      draw_loading_screen();
+    MillisRTC& rtc = MillisRTC::getInstance();
+    static uint8_t seconds_prev = 61;
+    uint8_t second = rtc.get_second();
+
+    // Switching from one clock style to another
+    static clock_styles_t clock_style_prev = CLOCKSTYLE_USER_MAX;
+    if (clock_style_prev != clock_style) {
+      clock_style_prev = clock_style;
+      uint8_t hour = rtc.get_hour();
+      uint8_t min = rtc.get_minute();
+      seconds_prev = 61;
+
+      switch (clock_style) {
+        case CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP:
+          this->screen_refresh_delay = 50;
+          draw_small_clock(hour, min, (int8_t)round(SensorHandler::getInstance().get_temperature()));
+          break;
+
+        case CLOCKSTYLE_SMALL_WITH_SECONDS:
+          this->screen_refresh_delay = 5;
+          draw_small_clock_with_seconds(hour, min, second);
+          break;
+
+        case CLOCKSTYLE_PLASMA:
+          this->screen_refresh_delay = 0;
+          draw_plasma_clock(hour, min, (int8_t)round(SensorHandler::getInstance().get_temperature()));
+          break;
+
+        case CLOCKSTYLE_BIG:
+          this->screen_refresh_delay = 50;
+          draw_clock(hour, min);
+          break;
+
+        case CLOCKSTYLE_DETAILED_STATUS:
+          this->screen_refresh_delay = 20;
+          show_detailed_status();
+          break;
+
+        case CLOCKSTYLE_LOADING:
+          this->screen_refresh_delay = 2;
+          draw_loading_screen();
+          break;
+
+        case CLOCKSTYLE_ZIGBEE_IDENTIFY:
+          ledmatrix_gfx.setup_text_scroll("I identify myself as a Zigbee clock. Look at me! Look at meeeee!");
+          text_scroll_in_progress = true;
+          this->screen_refresh_delay = 20;
+          break;
+
+        default:
+          break;
+      }
+
       return;
-    }
-    // Clear the screen after the loading animation
-    if (zigbee_time_initial_update_done != zigbee_time_initial_update_done_prev) {
-      zigbee_time_initial_update_done_prev = zigbee_time_initial_update_done;
-      this->screen_refresh_delay = 5;
-      ledmatrix_gfx.clear_framebuffer();
-      ledmatrix_gfx.render_framebuffer_to_screen();
     }
 
     static bool zigbee_identify_in_progress_prev = false;
+    static clock_styles_t clock_style_before_zigbee_identify = CLOCKSTYLE_USER_MAX;
+
+    // Refreshing the current clock style
+    switch (clock_style) {
+      case CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP: {
+        if (second != seconds_prev) {
+          seconds_prev = second;
+          SensorHandler& sensor_handler = SensorHandler::getInstance();
+          static uint8_t min_prev = 61;
+          static float temp_prev = -273.0f;
+          uint8_t hour = rtc.get_hour();
+          uint8_t min = rtc.get_minute();
+          if (min != min_prev || sensor_handler.get_temperature() != temp_prev) {
+            min_prev = min;
+            temp_prev = sensor_handler.get_temperature();
+            draw_small_clock(hour, min, (int8_t)round(sensor_handler.get_temperature()));
+          }
+        }
+      } break;
+
+      case CLOCKSTYLE_SMALL_WITH_SECONDS:
+        if (second != seconds_prev) {
+          seconds_prev = second;
+          uint8_t hour = rtc.get_hour();
+          uint8_t min = rtc.get_minute();
+          draw_small_clock_with_seconds(hour, min, second);
+        }
+        break;
+
+      case CLOCKSTYLE_PLASMA:
+        draw_plasma_clock(rtc.get_hour(), rtc.get_minute(), (int8_t)round(SensorHandler::getInstance().get_temperature()));
+        break;
+
+      case CLOCKSTYLE_BIG:
+        if (second != seconds_prev) {
+          seconds_prev = second;
+          uint8_t hour = rtc.get_hour();
+          uint8_t min = rtc.get_minute();
+          static uint8_t min_prev = 61;
+          if (min != min_prev) {
+            min_prev = min;
+            draw_clock(hour, min);
+          }
+        }
+        break;
+
+      case CLOCKSTYLE_DETAILED_STATUS:
+        if (!ledmatrix_gfx.scroll_text()) {
+          text_scroll_in_progress = false;
+          clock_style = CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP;
+          uint8_t hour = rtc.get_hour();
+          uint8_t min = rtc.get_minute();
+          draw_small_clock(hour, min, (int8_t)round(SensorHandler::getInstance().get_temperature()));
+        }
+        break;
+
+      case CLOCKSTYLE_LOADING:
+        draw_loading_screen();
+        if (TimesyncHandler::getInstance().isInitialTimeUpdateDone()) {
+          this->request_clock_style(CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP);
+        }
+        break;
+
+      case CLOCKSTYLE_ZIGBEE_IDENTIFY:
+        if (!ledmatrix_gfx.scroll_text()) {
+          zigbee_identify_in_progress_prev = false;
+          text_scroll_in_progress = false;
+          this->request_clock_style(clock_style_before_zigbee_identify);
+        }
+        break;
+
+      default:
+        break;
+    }
+
     bool zigbee_identify_in_progress = ZigbeeHandler::getInstance().get_identify_in_progress();
     if (zigbee_identify_in_progress && !zigbee_identify_in_progress_prev) {
-      zigbee_identify_in_progress_prev = zigbee_identify_in_progress;
-      ledmatrix_gfx.setup_text_scroll("I identify myself as a Zigbee clock. Look at me! Look at meee!");
-      text_scroll_in_progress = true;
-      this->screen_refresh_delay = 1;
-    }
-    if (zigbee_identify_in_progress) {
-      if (!ledmatrix_gfx.scroll_text()) {
-        text_scroll_in_progress = false;
-      } else {
-        delay(7);
-      }
-      return;
-    }
-
-    MillisRTC& rtc = MillisRTC::getInstance();
-
-    static uint8_t seconds_prev = 61;
-    uint8_t second = rtc.get_second();
-    if (second != seconds_prev) {
-      seconds_prev = second;
-      uint8_t hour = rtc.get_hour();
-      uint8_t min = rtc.get_minute();
-
-      if (clock_style == CLOCKSTYLE_SMALL_WITH_SECONDS) {
-        draw_small_clock_with_seconds(hour, min, second);
-      }
-
-      if (clock_style == CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP) {
-        SensorHandler& sensor_handler = SensorHandler::getInstance();
-        static uint8_t min_prev = 61;
-        static float temp_prev = -273.0f;
-        if (min != min_prev || sensor_handler.get_temperature() != temp_prev) {
-          min_prev = min;
-          temp_prev = sensor_handler.get_temperature();
-          draw_small_clock(hour, min, (int8_t)round(sensor_handler.get_temperature()));
-        }
-      }
-
-      static uint8_t min_prev = 61;
-      if (min != min_prev) {
-        min_prev = min;
-        if (clock_style == CLOCKSTYLE_BIG) {
-          draw_clock(hour, min);
-        }
-      }
-    }
-
-    if (clock_style == CLOCKSTYLE_PLASMA) {
-      draw_plasma_clock(rtc.get_hour(), rtc.get_minute(), (int8_t)round(SensorHandler::getInstance().get_temperature()));
-    }
-
-    // Scroll the text if needed - go to the first style when finished
-    if (clock_style == CLOCKSTYLE_DETAILED_STATUS) {
-      if (!ledmatrix_gfx.scroll_text()) {
-        text_scroll_in_progress = false;
-        clock_style = CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP;
-        uint8_t hour = rtc.get_hour();
-        uint8_t min = rtc.get_minute();
-        draw_small_clock(hour, min, (int8_t)round(SensorHandler::getInstance().get_temperature()));
-      } else {
-        delay(7);
-      }
+      zigbee_identify_in_progress_prev = true;
+      clock_style_before_zigbee_identify = clock_style;
+      this->request_clock_style(CLOCKSTYLE_ZIGBEE_IDENTIFY);
     }
   }
 
@@ -227,49 +278,7 @@ public:
     this->display_wake_requested = true;
   }
 
-  void draw_loading_screen() {
-    static uint8_t wait_cycles = 20u;
-    static const uint8_t anim_x_offset = 14u;
-    static const uint8_t anim_y_offset = 4u;
-
-    if (wait_cycles != 0) {
-      wait_cycles--;
-      return;
-    } else {
-      wait_cycles = 20u;
-    }
-
-    static bool led_states[4] = {0, 0, 0, 0};
-    static uint8_t anim_cnt = 0;
-
-    if (anim_cnt < 4) {
-      led_states[anim_cnt] = true;
-    } else if (anim_cnt < 8) {
-      led_states[anim_cnt - 4] = false;
-    }
-
-    anim_cnt++;
-    if (anim_cnt == 8) anim_cnt = 0;
-
-    ledmatrix_gfx.setxy_framebuffer(anim_x_offset, anim_y_offset, led_states[0]);
-    ledmatrix_gfx.setxy_framebuffer(anim_x_offset + 1, anim_y_offset, led_states[1]);
-    ledmatrix_gfx.setxy_framebuffer(anim_x_offset + 2, anim_y_offset, led_states[2]);
-    ledmatrix_gfx.setxy_framebuffer(anim_x_offset + 3, anim_y_offset, led_states[3]);
-    ledmatrix_gfx.render_framebuffer_to_screen();
-  }
-
 private:
-  typedef enum {
-    CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP = 0,
-    CLOCKSTYLE_SMALL_WITH_SECONDS,
-    CLOCKSTYLE_PLASMA,
-    CLOCKSTYLE_BIG,
-    CLOCKSTYLE_DETAILED_STATUS,
-    CLOCKSTYLE_USER_MAX,
-    CLOCKSTYLE_LOADING,
-    CLOCKSTYLE_ZIGBEE_IDENTIFY,
-  } clock_styles_t;
-
   clock_styles_t clock_style;
   bool text_scroll_in_progress;
   bool display_wake_requested;
@@ -435,6 +444,37 @@ private:
     ledmatrix_gfx.draw_small_num(display_x_offset + 17, display_y_offset, LEDMATRIX_SMALL_ICON_COLON);
     ledmatrix_gfx.draw_small_num(display_x_offset + 20, display_y_offset, second_tens);
     ledmatrix_gfx.draw_small_num(display_x_offset + 24, display_y_offset, second_ones);
+    ledmatrix_gfx.render_framebuffer_to_screen();
+  }
+
+  void draw_loading_screen() {
+    static uint8_t wait_cycles = 20u;
+    static const uint8_t anim_x_offset = 14u;
+    static const uint8_t anim_y_offset = 4u;
+
+    if (wait_cycles != 0) {
+      wait_cycles--;
+      return;
+    } else {
+      wait_cycles = 20u;
+    }
+
+    static bool led_states[4] = {0, 0, 0, 0};
+    static uint8_t anim_cnt = 0;
+
+    if (anim_cnt < 4) {
+      led_states[anim_cnt] = true;
+    } else if (anim_cnt < 8) {
+      led_states[anim_cnt - 4] = false;
+    }
+
+    anim_cnt++;
+    if (anim_cnt == 8) anim_cnt = 0;
+
+    ledmatrix_gfx.setxy_framebuffer(anim_x_offset, anim_y_offset, led_states[0]);
+    ledmatrix_gfx.setxy_framebuffer(anim_x_offset + 1, anim_y_offset, led_states[1]);
+    ledmatrix_gfx.setxy_framebuffer(anim_x_offset + 2, anim_y_offset, led_states[2]);
+    ledmatrix_gfx.setxy_framebuffer(anim_x_offset + 3, anim_y_offset, led_states[3]);
     ledmatrix_gfx.render_framebuffer_to_screen();
   }
 

@@ -67,15 +67,17 @@ void setup() {
   zigbee_handler.update_sensors();
 
   // Wait for the Zigbee network to be joined
-  Serial.println("Waiting for Zigbee network...");
+  ledmatrix_gfx.clear_framebuffer();
+  display_handler.request_clock_style(DisplayHandler::CLOCKSTYLE_LOADING);
   if (!Zigbee.isJoinedToNetwork()) {
+    Serial.println("Device is unpaired and entered network pairing mode");
     digitalWrite(LED_BUILTIN_2, LED_BUILTIN_ACTIVE);
-    ledmatrix_gfx.clear_framebuffer();
     ledmatrix_gfx.draw_num(0, 0, LEDMATRIX_ICON_WIFI);
     ledmatrix_gfx.render_framebuffer_to_screen();
   }
+  Serial.println("Waiting for Zigbee network...");
   while (!Zigbee.isJoinedToNetwork()) {
-    DisplayHandler::getInstance().draw_loading_screen();
+    display_handler.refresh_screen();
     delay(5);
     WatchdogTimer.feed();
   }
@@ -83,9 +85,6 @@ void setup() {
   Serial.printf("Joined Zigbee network; PAN_ID='0x%02x' channel='%u'\n", Zigbee.getPanId(), Zigbee.getChannel());
 
   WatchdogTimer.feed();
-
-  ledmatrix_gfx.clear_framebuffer();
-  ledmatrix_gfx.render_framebuffer_to_screen();
 }
 
 void loop() {
