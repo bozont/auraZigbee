@@ -14,12 +14,17 @@ public:
   void task() {
     const uint32_t turn_off_threshold_lx = 1.0f;
     const uint32_t turn_on_threshold_lx = 2.0f;
+    const uint32_t display_brightness_min_lx = 0.0f;
+    const uint32_t display_brightness_max_lx = 2500.0f;
+    const uint32_t display_brightness_min_unit = 0u;
+    const uint32_t display_brightness_max_unit = 15u;
+    const uint8_t light_value_history_size = 20u;
+
     static uint32_t display_brightness_prev = 100u;
     static bool display_on = true;
     static bool first_run = true;
-    float light_value_rolling_avg = 0.0f;
     static std::vector<float> light_value_history;
-    const uint8_t light_value_history_size = 20u;
+    float light_value_rolling_avg = 0.0f;
 
     float light_level = SensorHandler::getInstance().get_light_level();
     if (first_run) {
@@ -36,10 +41,6 @@ public:
     }
     light_value_rolling_avg = sum / light_value_history.size();
 
-    const uint32_t display_brightness_min_lx = 0.0f;
-    const uint32_t display_brightness_max_lx = 2500.0f;
-    const uint32_t display_brightness_min_unit = 0u;
-    const uint32_t display_brightness_max_unit = 15u;
     uint32_t display_brightness =
         map(light_value_rolling_avg, display_brightness_min_lx, display_brightness_max_lx, display_brightness_min_unit, display_brightness_max_unit);
     if (display_brightness > display_brightness_max_unit) {
