@@ -1,15 +1,6 @@
 #pragma once
 
-volatile bool button_pressed = false;
-
-void handle_button_press() {
-  static uint32_t btn_last_press = 0;
-  if (millis() < btn_last_press + 200) {
-    return;
-  }
-  btn_last_press = millis();
-  button_pressed = true;
-}
+void button_press_callback();
 
 class ButtonHandler {
 public:
@@ -20,14 +11,14 @@ public:
 
   void begin() {
     pinMode(BTN_BUILTIN, INPUT_PULLUP);
-    attachInterrupt(BTN_BUILTIN, &handle_button_press, FALLING);
+    attachInterrupt(BTN_BUILTIN, &button_press_callback, FALLING);
   }
 
   void task() {
-    if (!button_pressed) {
+    if (!this->button_pressed) {
       return;
     }
-    button_pressed = false;
+    this->button_pressed = false;
     Serial.println("Button pressed");
 
     // Ignore button presses before the initial time sync
@@ -49,9 +40,24 @@ public:
     display_handler.request_next_clock_style();
   }
 
+  void register_button_press() {
+    this->button_pressed = true;
+  }
+
 private:
-  ButtonHandler() {}
+  bool button_pressed;
+
+  ButtonHandler() : button_pressed(false) {}
 
   ButtonHandler(const ButtonHandler&) = delete;
   ButtonHandler& operator=(const ButtonHandler&) = delete;
 };
+
+void button_press_callback() {
+  static uint32_t btn_last_press = 0;
+  if (millis() < btn_last_press + 200) {
+    return;
+  }
+  btn_last_press = millis();
+  ButtonHandler::getInstance().register_button_press();
+}
