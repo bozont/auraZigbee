@@ -296,8 +296,8 @@ private:
     draw_small_clock(hour, minute, temperature, false);
 
     // Overlay the plasma effect
-    static const uint8_t WIDTH = 32u;
-    static const uint8_t HEIGHT = 8u;
+    static const uint8_t WIDTH = LedmatrixGFX::LEDMATRIX_WIDTH;
+    static const uint8_t HEIGHT = LedmatrixGFX::LEDMATRIX_HEIGHT;
 
     static float t = 0.0f;
     static float dirX = 1.0f;       // current X multiplier

@@ -1,5 +1,8 @@
 class LedmatrixGFX {
 public:
+  static const uint32_t LEDMATRIX_HEIGHT = 8u;
+  static const uint32_t LEDMATRIX_WIDTH = 32u;
+
   static LedmatrixGFX& getInstance() {
     static LedmatrixGFX instance;
     return instance;
@@ -218,8 +221,6 @@ public:
   }
 
 private:
-  static const uint32_t LEDMATRIX_HEIGHT = 8u;
-  static const uint32_t LEDMATRIX_WIDTH = 32u;
   static const uint32_t GFX_TEXTTOSHOW_BUFFER_SIZE = 256u;
 
   uint8_t ledmatrix_framebuffer[LEDMATRIX_WIDTH][LEDMATRIX_HEIGHT];
