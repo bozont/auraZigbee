@@ -34,10 +34,10 @@ public:
         last_sync_sec = millis() / 1000;
       } else {
         state = ZBTS_SYNC_WAIT_RESPONSE;
-        Serial.printf("No time sync response received; checking again in %d seconds...\n", SYNC_RECHECK_TIME_SEC);
+        log.log(Log::WARNING, F("No time sync response received; checking again in %d seconds..."), SYNC_RECHECK_TIME_SEC);
         no_response_cnt++;
         if (no_response_cnt >= 5u) {
-          Serial.printf("No time sync response received in %u checks; requesting sync again...\n", no_response_cnt);
+          log.log(Log::ERROR, F("No time sync response received in %u checks; requesting sync again..."), no_response_cnt);
           no_response_cnt = 0u;
           state = ZBTS_SYNC_IN_PROGRESS;
           this->requestZigbeeTimeSync();
@@ -69,19 +69,19 @@ public:
   }
 
   void requestZigbeeTimeSync() {
-    Serial.println("Requesting Zigbee time sync...");
+    log.log(Log::INFO, F("Requesting Zigbee time sync..."));
     zigbee_time_updated = false;
     zigbee_time.requestTime();
   }
 
   bool checkTimeSyncStatus() {
     if (zigbee_time_updated) {
-      Serial.println("Zigbee time sync response received");
+      log.log(Log::INFO, F("Zigbee time sync response received"));
       MillisRTC& rtc = MillisRTC::getInstance();
       this->zigbee_time_initial_update_done = true;
       uint32_t current_ntp_time = zigbee_time.getLocalUnixTime();
       rtc.set_from_unix(current_ntp_time);
-      Serial.printf("Current NTP time: %lu\n", current_ntp_time);
+      log.log(Log::INFO, F("Current NTP time: %lu"), current_ntp_time);
 
       time_t time = rtc.get_unix();
       struct tm ts;
@@ -97,9 +97,9 @@ public:
                ts.tm_hour,
                ts.tm_min,
                ts.tm_sec);
-      Serial.printf("Current date and time: %s\n", time_buf);
+      log.log(Log::INFO, F("Current date and time: %s"), time_buf);
 
-      Serial.println("Zigbee time sync finished");
+      log.log(Log::INFO, F("Zigbee time sync finished"));
       return true;
     }
 
@@ -122,7 +122,9 @@ private:
   volatile bool zigbee_time_initial_update_done = false;
   volatile bool zigbee_time_updated = false;
 
-  TimesyncHandler() {}
+  Log& log;
+
+  TimesyncHandler() : log(Log::getInstance()) {}
 
   TimesyncHandler(const TimesyncHandler&) = delete;
   TimesyncHandler& operator=(const TimesyncHandler&) = delete;

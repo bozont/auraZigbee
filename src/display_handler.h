@@ -42,8 +42,7 @@ public:
     if (this->clock_style >= CLOCKSTYLE_USER_MAX) {
       this->clock_style = (clock_styles_t)0;
     }
-    Serial.print("Clock style: ");
-    Serial.println(this->clock_style);
+    log.log(Log::INFO, F("Clock style: %u"), this->clock_style);
     return;
   }
 
@@ -224,14 +223,14 @@ public:
       lm.setDisplayOn(true);
       zigbee_bulb.set_onoff(true);
       display_on_zigbee_prev = true;
-      Serial.println("Screen ON (Button)");
+      log.log(Log::INFO, F("Screen ON (Button)"));
       display_wake_start = millis();
       display_wake_timer_running = true;
       return;
     }
 
     if (display_wake_timer_running && ((millis() - display_wake_start) > 10000u)) {
-      Serial.println("Screen OFF (Wake timer)");
+      log.log(Log::INFO, F("Screen OFF (Wake timer)"));
       display_wake_timer_running = false;
       lm.setDisplayOn(false);
       zigbee_bulb.set_onoff(false);
@@ -244,9 +243,9 @@ public:
       display_wake_timer_running = false;
       lm.setDisplayOn(display_on_zigbee);
       if (display_on_zigbee) {
-        Serial.println("Screen ON (Zigbee)");
+        log.log(Log::INFO, F("Screen ON (Zigbee)"));
       } else {
-        Serial.println("Screen OFF (Zigbee)");
+        log.log(Log::INFO, F("Screen OFF (Zigbee)"));
       }
       return;
     }
@@ -264,9 +263,9 @@ public:
       display_wake_timer_running = false;
       lm.setDisplayOn(display_on_autobrightness);
       if (display_on_autobrightness) {
-        Serial.println("Screen ON (Autobrightness)");
+        log.log(Log::INFO, F("Screen ON (Autobrightness)"));
       } else {
-        Serial.println("Screen OFF (Autobrightness)");
+        log.log(Log::INFO, F("Screen OFF (Autobrightness)"));
       }
       // Sync with Zigbee
       zigbee_bulb.set_onoff(display_on_autobrightness);
@@ -498,7 +497,6 @@ private:
                sensor_handler.get_light_level(),
                Zigbee.getPanId(),
                Zigbee.getChannel());
-    Serial.println(dest);
     ledmatrix_gfx.setup_text_scroll((String)dest);
     text_scroll_in_progress = true;
   }
@@ -508,9 +506,11 @@ private:
       , text_scroll_in_progress(false)
       , display_wake_requested(false)
       , screen_refresh_delay(10)
-      , ledmatrix_gfx(LedmatrixGFX::getInstance()) {}
+      , ledmatrix_gfx(LedmatrixGFX::getInstance())
+      , log(Log::getInstance()) {}
 
   LedmatrixGFX& ledmatrix_gfx;
+  Log& log = Log::getInstance();
 
   DisplayHandler(const DisplayHandler&) = delete;
   DisplayHandler& operator=(const DisplayHandler&) = delete;

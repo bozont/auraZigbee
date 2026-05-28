@@ -19,7 +19,7 @@ public:
       return;
     }
     this->button_pressed = false;
-    Serial.println("Button pressed");
+    log.log(Log::INFO, F("Button pressed"));
 
     // Ignore button presses before the initial time sync
     if (!TimesyncHandler::getInstance().isInitialTimeUpdateDone()) {
@@ -46,8 +46,11 @@ public:
 
 private:
   bool button_pressed;
+  Log& log = Log::getInstance();
 
-  ButtonHandler() : button_pressed(false) {}
+  ButtonHandler()
+      : button_pressed(false)
+      , log(Log::getInstance()) {}
 
   ButtonHandler(const ButtonHandler&) = delete;
   ButtonHandler& operator=(const ButtonHandler&) = delete;

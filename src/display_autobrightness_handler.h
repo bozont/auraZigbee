@@ -46,28 +46,27 @@ public:
     if (display_brightness > display_brightness_max_unit) {
       display_brightness = display_brightness_max_unit;
     }
-    // Serial.printf("Light level: %.02f lx | Average light level: %.02f lx | Display brightness: %u\n", light_level, light_value_rolling_avg,
-    // display_brightness);
+    // log.log(Log::INFO, F("Light level: %.02f lx | Average light level: %.02f lx | Display brightness: %u\n"), light_level, light_value_rolling_avg, display_brightness);
 
     // Turn off screen if it's dark
     if (this->turn_off_in_darkness) {
       if (light_value_rolling_avg <= turn_off_threshold_lx && display_on) {
         display_on_autobrightness = false;
         display_on = false;
-        Serial.printf("Autobrightness display OFF; Light level: %.02f lx | Average light level: %.02f lx\n", light_level, light_value_rolling_avg);
+        log.log(Log::INFO, F("Autobrightness display OFF; Light level: %.02f lx | Average light level: %.02f lx"), light_level, light_value_rolling_avg);
       } else if (light_value_rolling_avg >= turn_on_threshold_lx && !display_on) {
         display_on_autobrightness = true;
         display_on = true;
-        Serial.printf("Autobrightness display ON; Light level: %.02f lx | Average light level: %.02f lx\n", light_level, light_value_rolling_avg);
+        log.log(Log::INFO, F("Autobrightness display ON; Light level: %.02f lx | Average light level: %.02f lx"), light_level, light_value_rolling_avg);
       }
     }
 
     // Set the calculated brightness if it has changed and the screen is on
     if (display_brightness_prev != display_brightness && display_on) {
-      Serial.printf("Light level: %.02f lx | Average light level: %.02f lx | Display brightness: %u\n",
-                    light_level,
-                    light_value_rolling_avg,
-                    display_brightness);
+      log.log(Log::INFO, F("Light level: %.02f lx | Average light level: %.02f lx | Display brightness: %u"),
+                          light_level,
+                          light_value_rolling_avg,
+                          display_brightness);
       lm.setBrightness(display_brightness);
       display_brightness_prev = display_brightness;
     }
@@ -82,9 +81,12 @@ private:
   bool turn_off_in_darkness;
   bool display_on_autobrightness;
 
+  Log& log;
+
   DisplayAutobrightnessHandler()
       : turn_off_in_darkness(true)
-      , display_on_autobrightness(true) {}
+      , display_on_autobrightness(true)
+      , log(Log::getInstance()) {}
 
   DisplayAutobrightnessHandler(const DisplayAutobrightnessHandler&) = delete;
   DisplayAutobrightnessHandler& operator=(const DisplayAutobrightnessHandler&) = delete;

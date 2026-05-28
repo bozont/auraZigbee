@@ -77,10 +77,10 @@ private:
     bool identification_in_progress = zigbee_bulb.get_identify_in_progress();
     // Handle the identification enable/disable transitions
     if (identification_in_progress && !identification_in_progress_last) {
-      Serial.println("Zigbee identification started");
+      log.log(Log::INFO, F("Zigbee identification started"));
     } else if (!identification_in_progress && identification_in_progress_last) {
       // Set the LED to the current on/off state once the identification ends
-      Serial.println("Zigbee identification ended");
+      log.log(Log::INFO, F("Zigbee identification ended"));
       digitalWrite(LED_BUILTIN_2, LED_BUILTIN_INACTIVE);
     }
     identification_in_progress_last = identification_in_progress;
@@ -95,7 +95,9 @@ private:
     }
   }
 
-  ZigbeeHandler() {}
+  Log& log;
+
+  ZigbeeHandler() : log(Log::getInstance()) {}
 
   ZigbeeHandler(const ZigbeeHandler&) = delete;
   ZigbeeHandler& operator=(const ZigbeeHandler&) = delete;

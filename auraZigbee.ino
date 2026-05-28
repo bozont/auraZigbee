@@ -10,11 +10,12 @@
 #include <ZigbeeTimeClient.h>
 #include <time.h>
 
-#define LC_SPI_CS A0
-#define LC_NUMBER_OF_DEVICES 4
-bozontlabsMAX7219 lm = bozontlabsMAX7219(LC_SPI_CS, LC_NUMBER_OF_DEVICES);
+#define LM_SPI_CS A0
+#define LM_NUMBER_OF_DEVICES 4
+bozontlabsMAX7219 lm = bozontlabsMAX7219(LM_SPI_CS, LM_NUMBER_OF_DEVICES);
 
 #include "src/millis_rtc.h"
+#include "src/log.h"
 #include "src/ledmatrix_font.h"
 #include "src/ledmatrix_gfx.h"
 #include "src/timesync_handler.h"
@@ -27,9 +28,12 @@ bozontlabsMAX7219 lm = bozontlabsMAX7219(LC_SPI_CS, LC_NUMBER_OF_DEVICES);
 void setup() {
   WatchdogTimer.begin(WDOG_PERIOD_16_S);
   WatchdogTimer.feed();
-  Serial.begin(115200);
-  Serial.println("auraSmartClock Zigbee Edition (tm)");
-  Serial.println("Build date: " __DATE__ " " __TIME__);
+
+  Log& log = Log::getInstance();
+  log.begin();
+  log.log(Log::INFO, F("auraSmartClock Zigbee Edition (tm)"));
+  log.log(Log::INFO, F("Build date: %s %s"), __DATE__, __TIME__);
+
   pinMode(LED_BUILTIN_2, OUTPUT);
   digitalWrite(LED_BUILTIN_2, LED_BUILTIN_INACTIVE);
   ButtonHandler::getInstance().begin();
@@ -40,7 +44,7 @@ void setup() {
   delay(200);
 
   // Boot the screen
-  Serial.println("Initializing display...");
+  log.log(Log::INFO, F("Initializing display..."));
   lm.begin();
   lm.setDisplayOn(true);
   lm.setBrightness(0);
@@ -49,7 +53,7 @@ void setup() {
   ledmatrix_gfx.begin();
   DisplayHandler& display_handler = DisplayHandler::getInstance();
   display_handler.begin();
-  Serial.println("Display initialized");
+  log.log(Log::INFO, F("Display initialized"));
   // Set the initial brightness
   sensor_handler.modulino_light_measure();
   DisplayAutobrightnessHandler::getInstance().task();
@@ -70,19 +74,19 @@ void setup() {
   ledmatrix_gfx.clear_framebuffer();
   display_handler.request_clock_style(DisplayHandler::CLOCKSTYLE_LOADING);
   if (!Zigbee.isJoinedToNetwork()) {
-    Serial.println("Device is unpaired and entered network pairing mode");
+    log.log(Log::INFO, F("Device is unpaired and entered network pairing mode"));
     digitalWrite(LED_BUILTIN_2, LED_BUILTIN_ACTIVE);
     ledmatrix_gfx.draw_num(0, 0, LEDMATRIX_ICON_WIFI);
     ledmatrix_gfx.render_framebuffer_to_screen();
   }
-  Serial.println("Waiting for Zigbee network...");
+  log.log(Log::INFO, F("Waiting for Zigbee network..."));
   while (!Zigbee.isJoinedToNetwork()) {
     display_handler.refresh_screen();
     delay(5);
     WatchdogTimer.feed();
   }
   digitalWrite(LED_BUILTIN_2, LED_BUILTIN_INACTIVE);
-  Serial.printf("Joined Zigbee network; PAN_ID='0x%02x' channel='%u'\n", Zigbee.getPanId(), Zigbee.getChannel());
+  log.log(Log::INFO, F("Joined Zigbee network; PAN_ID='0x%02x' channel='%u'"), Zigbee.getPanId(), Zigbee.getChannel());
 
   WatchdogTimer.feed();
 }
@@ -114,6 +118,7 @@ void loop() {
   static uint32_t task_1min_timer = 0;
   if (task_1min_timer + 60000u < millis_curr) {
     task_1min_timer = millis_curr;
-    Serial.printf("Uptime: %s\n", Uptime::getInstance().get_uptime_string().c_str());
+    Log& log = Log::getInstance();
+    log.log(Log::INFO, F("Uptime: %s"), Uptime::getInstance().get_uptime_string().c_str());
   }
 }

@@ -169,6 +169,12 @@ public:
     return names[this->get_dayname()];
   }
 
+  // Returns the current day of the week as a short string
+  const char* get_dayname_short_str(void) {
+    static const char* names[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+    return names[this->get_dayname()];
+  }
+
   // Returns the current second (0–59)
   uint8_t get_second() {
     return this->device_rtc_clock % 60;

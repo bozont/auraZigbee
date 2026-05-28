@@ -34,12 +34,12 @@ public:
 
     if (modulino_temp_new != modulino_temp) {
       modulino_temp = modulino_temp_new;
-      Serial.printf("Temperature: %.1f C\n", modulino_temp);
+      log.log(Log::INFO, F("Temperature: %.1f C"), modulino_temp);
     }
 
     if (modulino_humidity_new != modulino_humidity) {
       modulino_humidity = modulino_humidity_new;
-      Serial.printf("Humidity: %.1f%%\n", modulino_humidity);
+      log.log(Log::INFO, F("Humidity: %.1f%%"), modulino_humidity);
     }
   }
 
@@ -66,11 +66,13 @@ private:
   float modulino_temp;
   float modulino_humidity;
   float modulino_light_level;
+  Log& log;
 
   SensorHandler() :
     modulino_temp(0.0f),
     modulino_humidity(0.0f),
-    modulino_light_level(0.0f)
+    modulino_light_level(0.0f),
+    log(Log::getInstance())
   {}
 
   SensorHandler(const SensorHandler&) = delete;
