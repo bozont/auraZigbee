@@ -111,7 +111,7 @@ public:
           break;
 
         case CLOCKSTYLE_ZIGBEE_IDENTIFY:
-          ledmatrix_gfx.setup_text_scroll("I identify myself as a Zigbee clock. Look at me! Look at meeeee!");
+          ledmatrix_gfx.setup_text_scroll("     I identify myself as a Zigbee clock. Look at me! Look at meeeee!");
           text_scroll_in_progress = true;
           this->screen_refresh_delay = 20;
           break;
