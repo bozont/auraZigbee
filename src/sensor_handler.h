@@ -11,9 +11,26 @@ public:
   }
 
   void begin() {
+    log.log(Log::INFO, F("Initializing sensors..."));
     Modulino.begin();
-    modulino_thermo.begin();
-    modulino_light.begin();
+
+    bool res = modulino_thermo.begin();
+    if (!res) {
+      log.log(Log::ERROR, F("Failed to initialize Modulino Thermo"));
+    } else {
+      log.log(Log::INFO, F("Modulino Thermo initialized successfully"));
+      this->modulino_thermo_available = true;
+    }
+
+    res = modulino_light.begin();
+    if (!res) {
+      log.log(Log::ERROR, F("Failed to initialize Modulino Light"));
+      // Set 10 lx as a default to avoid the screen being completely dark without a working light sensor
+      this->modulino_light_level = 10.0f;
+    } else {
+      log.log(Log::INFO, F("Modulino Light initialized successfully"));
+      this->modulino_light_available = true;
+    }
   }
 
   void task() {
@@ -27,6 +44,9 @@ public:
   }
 
   void modulino_thermo_measure() {
+    if (!this->modulino_thermo_available) {
+      return;
+    }
     // Drop everything below the first decimal
     float modulino_temp_new = floor(modulino_thermo.getTemperature() * 10) / 10.0 + modulino_temp_calibration;
     // Drop all decimals on humidity
@@ -44,6 +64,9 @@ public:
   }
 
   void modulino_light_measure() {
+    if (!this->modulino_light_available) {
+      return;
+    }
     int light_reading = 0;
     modulino_light.readAmbientLight(light_reading);
     this->modulino_light_level = (float)light_reading;
@@ -66,12 +89,16 @@ private:
   float modulino_temp;
   float modulino_humidity;
   float modulino_light_level;
+  bool modulino_thermo_available;
+  bool modulino_light_available;
   Log& log;
 
   SensorHandler() :
     modulino_temp(0.0f),
     modulino_humidity(0.0f),
     modulino_light_level(0.0f),
+    modulino_thermo_available(false),
+    modulino_light_available(false),
     log(Log::getInstance())
   {}
 
