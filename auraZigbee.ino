@@ -73,20 +73,20 @@ void setup() {
   // Wait for the Zigbee network to be joined
   ledmatrix_gfx.clear_framebuffer();
   display_handler.request_clock_style(DisplayHandler::CLOCKSTYLE_LOADING);
-  if (!Zigbee.isJoinedToNetwork()) {
+  if (!Zigbee.isPaired()) {
     log.log(Log::INFO, F("Device is unpaired and entered network pairing mode"));
     digitalWrite(LED_BUILTIN_2, LED_BUILTIN_ACTIVE);
     ledmatrix_gfx.draw_num(0, 0, LEDMATRIX_ICON_WIFI);
     ledmatrix_gfx.render_framebuffer_to_screen();
   }
-  log.log(Log::INFO, F("Waiting for Zigbee network..."));
-  while (!Zigbee.isJoinedToNetwork()) {
+  log.log(Log::INFO, F("Connecting to Zigbee network..."));
+  while (!Zigbee.isConnectedToNetwork()) {
     display_handler.refresh_screen();
     delay(5);
     WatchdogTimer.feed();
   }
   digitalWrite(LED_BUILTIN_2, LED_BUILTIN_INACTIVE);
-  log.log(Log::INFO, F("Joined Zigbee network; PAN_ID='0x%02x' channel='%u'"), Zigbee.getPanId(), Zigbee.getChannel());
+  log.log(Log::INFO, F("Connected to Zigbee network; PAN_ID='0x%02x' channel='%u'"), Zigbee.getPanId(), Zigbee.getChannel());
 
   WatchdogTimer.feed();
 }

@@ -1,9 +1,5 @@
 #pragma once
 
-inline int vsnprintf_P(char* str, size_t size, const char* format, va_list ap) {
-  return vsnprintf(str, size, format, ap);
-}
-
 class Log {
 public:
   enum log_level_t {
