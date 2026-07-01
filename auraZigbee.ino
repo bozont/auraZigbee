@@ -56,7 +56,10 @@ void setup() {
   log.log(Log::INFO, F("Display initialized"));
   // Set the initial brightness
   sensor_handler.modulino_light_measure();
-  DisplayAutobrightnessHandler::getInstance().task();
+  DisplayAutobrightnessHandler& display_autobrigntess_handler = DisplayAutobrightnessHandler::getInstance();
+  display_autobrigntess_handler.begin();
+  display_autobrigntess_handler.set_turn_off_in_darkness(true);
+  display_autobrigntess_handler.task();
   delay(500);
 
   // Initialize Zigbee

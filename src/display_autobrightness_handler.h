@@ -77,6 +77,10 @@ public:
     return this->display_on_autobrightness;
   }
 
+  void set_turn_off_in_darkness(bool turn_off_in_darkness) {
+    this->turn_off_in_darkness = turn_off_in_darkness;
+  }
+
 private:
   bool turn_off_in_darkness;
   bool display_on_autobrightness;

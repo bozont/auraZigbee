@@ -1,3 +1,5 @@
+#pragma once
+
 class LedmatrixGFX {
 public:
   static const uint32_t LEDMATRIX_HEIGHT = 8u;

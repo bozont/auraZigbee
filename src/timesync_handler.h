@@ -119,12 +119,15 @@ private:
   static const uint32_t ZBTS_SYNC_FREQUENCY_HOURS = 1u;
   enum ntp_state_e : uint8_t { ZBTS_INIT = 0, ZBTS_SYNC_IN_PROGRESS, ZBTS_SLEEP, ZBTS_SYNC_WAIT_RESPONSE };
 
-  volatile bool zigbee_time_initial_update_done = false;
-  volatile bool zigbee_time_updated = false;
+  volatile bool zigbee_time_initial_update_done;
+  volatile bool zigbee_time_updated;
 
   Log& log;
 
-  TimesyncHandler() : log(Log::getInstance()) {}
+  TimesyncHandler()
+      : zigbee_time_initial_update_done(false)
+      , zigbee_time_updated(false)
+      , log(Log::getInstance()) {}
 
   TimesyncHandler(const TimesyncHandler&) = delete;
   TimesyncHandler& operator=(const TimesyncHandler&) = delete;
