@@ -50,7 +50,7 @@ void setup() {
   lm.setBrightness(0);
   lm.clearDisplay();
   LedmatrixGFX& ledmatrix_gfx = LedmatrixGFX::getInstance();
-  ledmatrix_gfx.begin();
+  ledmatrix_gfx.begin(&lm);
   DisplayHandler& display_handler = DisplayHandler::getInstance();
   display_handler.begin();
   log.log(Log::INFO, F("Display initialized"));

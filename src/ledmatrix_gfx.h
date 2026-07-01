@@ -10,7 +10,8 @@ public:
     return instance;
   }
 
-  void begin() {
+  void begin(bozontlabsMAX7219* max7219_driver) {
+    this->max7219_driver = max7219_driver;
     memset(text_to_show_data, 0u, sizeof(text_to_show_data));
     memset(ledmatrix_framebuffer, false, LEDMATRIX_WIDTH * LEDMATRIX_HEIGHT);
     memset(ledmatrix_framebuffer_onscreen, false, (LEDMATRIX_WIDTH * LEDMATRIX_HEIGHT));
@@ -22,13 +23,13 @@ public:
   }
 
   void max7219_set_pixel(uint8_t x, uint8_t y, bool value) {
-    if (x >= LEDMATRIX_WIDTH || y >= LEDMATRIX_HEIGHT) {
+    if (x >= LEDMATRIX_WIDTH || y >= LEDMATRIX_HEIGHT || !this->max7219_driver) {
       return;
     }
 
     // Only render the pixel if there's a change
     if (ledmatrix_framebuffer_onscreen[x][y] != value) {
-      lm.setPixel(x, y, value);
+      this->max7219_driver->setPixel(x, y, value);
       ledmatrix_framebuffer_onscreen[x][y] = value;
     }
   }
@@ -225,6 +226,8 @@ public:
 private:
   static const uint32_t GFX_TEXTTOSHOW_BUFFER_SIZE = 256u;
 
+  bozontlabsMAX7219* max7219_driver;
+
   uint8_t ledmatrix_framebuffer[LEDMATRIX_WIDTH][LEDMATRIX_HEIGHT];
   uint8_t ledmatrix_framebuffer_onscreen[LEDMATRIX_WIDTH][LEDMATRIX_HEIGHT];
 
@@ -233,7 +236,7 @@ private:
   uint32_t txtscroll_string_iter = 0u;
   const uint8_t* text_to_show_data[GFX_TEXTTOSHOW_BUFFER_SIZE];
 
-  LedmatrixGFX() {}
+  LedmatrixGFX() : max7219_driver(nullptr) {}
 
   LedmatrixGFX(const LedmatrixGFX&) = delete;
   LedmatrixGFX& operator=(const LedmatrixGFX&) = delete;
