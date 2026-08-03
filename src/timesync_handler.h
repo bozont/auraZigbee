@@ -12,7 +12,7 @@ public:
   }
 
   void begin() {
-    zigbee_time.setTimeUpdateCallback(onZigbeeTimeUpdated);
+    zigbee_time.set_time_update_callback(onZigbeeTimeUpdated);
     zigbee_time.begin();
   }
 
@@ -71,7 +71,7 @@ public:
   void requestZigbeeTimeSync() {
     log.log(Log::INFO, F("Requesting Zigbee time sync..."));
     zigbee_time_updated = false;
-    zigbee_time.requestTime();
+    zigbee_time.request_time();
   }
 
   bool checkTimeSyncStatus() {
@@ -79,7 +79,7 @@ public:
       log.log(Log::INFO, F("Zigbee time sync response received"));
       MillisRTC& rtc = MillisRTC::getInstance();
       this->zigbee_time_initial_update_done = true;
-      uint32_t current_ntp_time = zigbee_time.getLocalUnixTime();
+      uint32_t current_ntp_time = zigbee_time.get_local_unix_time();
       rtc.set_from_unix(current_ntp_time);
       log.log(Log::INFO, F("Current NTP time: %lu"), current_ntp_time);
 
