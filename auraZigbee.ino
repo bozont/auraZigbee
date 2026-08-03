@@ -1,14 +1,13 @@
-#include <Arduino_Modulino.h>
-#include <SPI.h>
-#include <WatchdogTimer.h>
-#include <bozontlabsMAX7219.h>
-#include <chrono>
-#include <uptime.h>
-#include <vector>
-
 #include <Zigbee.h>
 #include <ZigbeeTimeClient.h>
-#include <time.h>
+#include <SPI.h>
+#include <WatchdogTimer.h>
+#include <chrono>
+#include <vector>
+
+#include <Arduino_Modulino.h> // 0.9.0 - Arduino - https://github.com/arduino-libraries/Arduino_Modulino
+#include <bozontlabsUptime.h> // 1.0.0 - Tamas Jozsi - https://github.com/bozont/bozontlabsUptime
+#include <bozontlabsMAX7219.h> // 1.0.1 - Tamas Jozsi - https://github.com/bozont/bozontlabsMAX7219
 
 #define LM_SPI_CS A0
 #define LM_NUMBER_OF_DEVICES 4
