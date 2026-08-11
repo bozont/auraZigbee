@@ -490,7 +490,7 @@ private:
                rtc.get_year(),
                rtc.get_month_str(),
                rtc.get_day(),
-               rtc.get_dayname_str(),
+               rtc.get_day_name_str(),
                Uptime::getInstance().get_uptime_string().c_str(),
                sensor_handler.get_temperature(),
                sensor_handler.get_humidity(),

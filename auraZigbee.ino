@@ -5,15 +5,15 @@
 #include <chrono>
 #include <vector>
 
-#include <Arduino_Modulino.h> // 0.9.0 - Arduino - https://github.com/arduino-libraries/Arduino_Modulino
-#include <bozontlabsUptime.h> // 1.0.0 - Tamas Jozsi - https://github.com/bozont/bozontlabsUptime
+#include <Arduino_Modulino.h>  // 0.9.0 - Arduino - https://github.com/arduino-libraries/Arduino_Modulino
+#include <bozontlabsUptime.h>  // 1.0.0 - Tamas Jozsi - https://github.com/bozont/bozontlabsUptime
 #include <bozontlabsMAX7219.h> // 1.0.1 - Tamas Jozsi - https://github.com/bozont/bozontlabsMAX7219
+#include <millisRTC.h>         // 1.0.2 - Tamas Jozsi - https://github.com/bozont/millisRTC
 
 #define LM_SPI_CS A0
 #define LM_NUMBER_OF_DEVICES 4
 bozontlabsMAX7219 lm = bozontlabsMAX7219(LM_SPI_CS, LM_NUMBER_OF_DEVICES);
 
-#include "src/millis_rtc.h"
 #include "src/log.h"
 #include "src/ledmatrix_font.h"
 #include "src/ledmatrix_gfx.h"

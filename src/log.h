@@ -38,7 +38,7 @@ public:
     snprintf(timebuf,
              sizeof(timebuf),
              "%s %u-%02u-%02d %02u:%02u:%02u",
-             rtc.get_dayname_short_str(),
+             rtc.get_day_name_short_str(),
              rtc.get_year(),
              rtc.get_month(),
              rtc.get_day(),
