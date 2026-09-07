@@ -16,3 +16,7 @@ Smart clock with **Zigbee®**
  - Arduino Modulino Thermo
  - Arduino Modulino Light
  - MAX7219 32x8 LED Matrix Display
+
+## 3D printable base
+
+You can find the design files for the 3D printable base plate under the `stl` folder.
