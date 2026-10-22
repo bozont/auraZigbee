@@ -6,6 +6,7 @@ public:
     CLOCKSTYLE_SMALL_WITH_INSIDE_TEMP = 0,
     CLOCKSTYLE_SMALL_WITH_SECONDS,
     CLOCKSTYLE_PLASMA,
+    CLOCKSTYLE_SMALL_WITH_SECONDS_BAR,
     CLOCKSTYLE_BIG,
     CLOCKSTYLE_DETAILED_STATUS,
     CLOCKSTYLE_USER_MAX,
@@ -94,6 +95,11 @@ public:
           draw_plasma_clock(hour, min, (int8_t)round(SensorHandler::getInstance().get_temperature()));
           break;
 
+        case CLOCKSTYLE_SMALL_WITH_SECONDS_BAR:
+          this->screen_refresh_delay = 5;
+          draw_small_clock_with_seconds_bar(hour, min, second, (int8_t)round(SensorHandler::getInstance().get_temperature()));
+          break;
+
         case CLOCKSTYLE_BIG:
           this->screen_refresh_delay = 50;
           draw_clock(hour, min);
@@ -154,6 +160,15 @@ public:
 
       case CLOCKSTYLE_PLASMA:
         draw_plasma_clock(rtc.get_hour(), rtc.get_minute(), (int8_t)round(SensorHandler::getInstance().get_temperature()));
+        break;
+
+      case CLOCKSTYLE_SMALL_WITH_SECONDS_BAR:
+        if (second != seconds_prev) {
+          seconds_prev = second;
+          uint8_t hour = rtc.get_hour();
+          uint8_t min = rtc.get_minute();
+          draw_small_clock_with_seconds_bar(hour, min, second, (int8_t)round(SensorHandler::getInstance().get_temperature()));
+        }
         break;
 
       case CLOCKSTYLE_BIG:
@@ -419,6 +434,17 @@ private:
     }
 
     if (render_to_screen) ledmatrix_gfx.render_framebuffer_to_screen();
+  }
+
+  void draw_small_clock_with_seconds_bar(uint8_t hour, uint8_t minute, uint8_t seconds, int8_t temperature) {
+    draw_small_clock(hour, minute, temperature, false);
+
+    // Each pixel represents two seconds
+    for (uint8_t i = 0; i <= seconds / 2; i++) {
+      ledmatrix_gfx.setxy_framebuffer(1 + i, 0, true);
+    }
+
+    ledmatrix_gfx.render_framebuffer_to_screen();
   }
 
   void draw_small_clock_with_seconds(uint8_t hour, uint8_t minute, uint8_t seconds) {
